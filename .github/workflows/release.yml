@@ -1,0 +1,77 @@
+# Baut die Firmware bei jedem Versions-Tag, hängt die Images an das Release und veröffentlicht den
+# Browser-Installer (ESP Web Tools) auf GitHub Pages.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  ESP32_CORE: "3.3.12"
+  NIMBLE: "2.5.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # build.sh leitet die Version aus den Tags ab
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Toolchain installieren
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install "esp32:esp32@${ESP32_CORE}"
+          arduino-cli lib install "NimBLE-Arduino@${NIMBLE}"
+
+      - name: Firmware bauen
+        run: firmware/build.sh siri_bridge
+
+      - name: Prüfsummen und Installer-Seite
+        run: |
+          VERSION=$(git describe --tags --always)
+          (cd firmware/dist && sha256sum *.bin > "SHA256SUMS-${VERSION}.txt")
+          mkdir -p site
+          cp flasher/index.html site/
+          cp firmware/dist/*-merged.bin site/firmware.bin
+          cat > site/manifest.json <<EOF
+          {
+            "name": "Siri Remote ESP32 Bridge",
+            "version": "${VERSION}",
+            "new_install_prompt_erase": false,
+            "builds": [{ "chipFamily": "ESP32-S3", "parts": [{ "path": "firmware.bin", "offset": 0 }] }]
+          }
+          EOF
+
+      - name: Images an das Release hängen
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: firmware/dist/*
+          generate_release_notes: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  pages:
+    # GitHub Pages gibt es im kostenlosen Tarif nur für öffentliche Repos.
+    if: ${{ !github.event.repository.private }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
