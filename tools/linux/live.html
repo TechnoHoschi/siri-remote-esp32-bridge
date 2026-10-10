@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siri Remote live</title>
+<style>
+  :root {
+    --bg: #f4f4f1; --panel: #ffffff; --text: #1c1c1a; --muted: #6b6b66; --line: #dddcd6;
+    --remote: #d9d9d6; --key: #1d1d1f; --key-text: #f2f2f0; --accent: #e8590c; --ok: #2b8a3e; --warn: #c92a2a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --panel: #1f1f1c; --text: #ecece7; --muted: #9a9a92; --line: #33332f;
+      --remote: #3a3a37; --key: #0c0c0b; --key-text: #d8d8d2; --accent: #ff8c42; --ok: #69db7c; --warn: #ff8787;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 40px; background: var(--bg); color: var(--text);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 16px; font-weight: 600; }
+  .layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 28px; max-width: 980px; margin: 0 auto; }
+  @media (max-width: 640px) { .layout { grid-template-columns: 1fr; justify-items: center; } .side { width: 100%; } }
+
+  .remote { position: relative; width: 150px; height: 470px; margin: 0 20px; border-radius: 38px;
+            background: var(--remote); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+  .k { position: absolute; display: grid; place-items: center; border-radius: 50%; background: var(--key);
+       color: var(--key-text); font-size: 12px; font-weight: 600; user-select: none;
+       transition: background .25s ease-out, box-shadow .25s ease-out; }
+  .k.on, .seg.on { background: var(--accent); color: #fff; transition: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent); }
+  .power { top: 16px; right: 16px; width: 26px; height: 26px; font-size: 11px; }
+  .pad { top: 54px; left: 16px; width: 118px; height: 118px; background: var(--key); border-radius: 50%; position: absolute; }
+  .click { top: 26px; left: 26px; width: 66px; height: 66px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .seg { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.22);
+         transition: background .25s ease-out; }
+  .up { top: 5px; left: 51px; } .down { bottom: 5px; left: 51px; } .left { left: 5px; top: 51px; } .right { right: 5px; top: 51px; }
+  .back { top: 190px; left: 16px; width: 52px; height: 52px; font-size: 18px; }
+  .home { top: 190px; right: 16px; width: 52px; height: 52px; }
+  .play { top: 252px; left: 16px; width: 52px; height: 52px; }
+  .mute { top: 314px; left: 16px; width: 52px; height: 52px; }
+  .volup { top: 252px; right: 16px; width: 52px; height: 57px; border-radius: 26px 26px 0 0; font-size: 20px; }
+  .voldn { top: 309px; right: 16px; width: 52px; height: 57px; border-radius: 0 0 26px 26px; font-size: 20px; }
+  .siri { top: 150px; right: -8px; width: 8px; height: 44px; border-radius: 0 4px 4px 0; font-size: 0; }
+  .siri-label { position: absolute; top: 163px; right: -38px; font-size: 11px; color: var(--muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .card .label { font-size: 12px; color: var(--muted); }
+  .card .value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--warn); }
+
+  .tablewrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; color: var(--muted); font-weight: 500; }
+  th:nth-child(2), td:nth-child(2) { text-align: left; }
+  tr:last-child td { border-bottom: 0; }
+  td.note { color: var(--muted); font-size: 12px; text-align: left; }
+  .empty { padding: 18px 12px; color: var(--muted); text-align: left; }
+  .hint { color: var(--muted); font-size: 12px; margin: 10px 2px 0; max-width: 70ch; }
+  button { font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); cursor: pointer; float: right; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <div>
+    <div class="remote" aria-label="Siri Remote">
+      <div class="k power" data-bit="16">⏻</div>
+      <div class="pad">
+        <div class="seg up" data-bit="512"></div><div class="seg right" data-bit="1024"></div>
+        <div class="seg down" data-bit="2048"></div><div class="seg left" data-bit="4096"></div>
+        <div class="k click" data-bit="8"></div>
+      </div>
+      <div class="k back" data-bit="64">‹</div>
+      <div class="k home" data-bit="1">TV</div>
+      <div class="k play" data-bit="256">▶‖</div>
+      <div class="k mute" data-bit="128">Mute</div>
+      <div class="k volup" data-bit="2">+</div>
+      <div class="k voldn" data-bit="4">−</div>
+      <div class="k siri" data-bit="32"></div>
+      <div class="siri-label">Siri</div>
+    </div>
+  </div>
+
+  <div class="side">
+    <h1>Siri Remote live <button id="clear">Liste leeren</button></h1>
+    <div class="cards">
+      <div class="card"><div class="label">Verbindung</div><div class="value" id="status"><span class="dot"></span>…</div><div class="sub" id="status-sub">&nbsp;</div></div>
+      <div class="card"><div class="label">Letzter Reconnect</div><div class="value" id="reconn">–</div><div class="sub" id="reconn-sub">Aufwachen → erste Taste</div></div>
+      <div class="card"><div class="label">Tastendrücke</div><div class="value" id="count">0</div><div class="sub" id="count-sub">&nbsp;</div></div>
+      <div class="card"><div class="label">Touchpad</div><div class="value" id="touch">0/s</div><div class="sub">Reports pro Sekunde</div></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Zeit (Pi)</th><th>Taste</th><th>gedrückt</th><th>Pause davor</th><th></th></tr></thead>
+        <tbody id="rows"><tr><td colspan="5" class="empty">Noch kein Tastendruck. Drück eine Taste auf der Remote.</td></tr></tbody>
+      </table>
+    </div>
+    <p class="hint">Zeiten stammen von der Uhr des Pi beim Eintreffen des Reports. „gedrückt“ ist die Dauer zwischen Drücken und
+      Loslassen, „Pause davor“ der Abstand zum vorigen Loslassen. „nachgeliefert“ markiert Drücke, die die Remote gepuffert
+      hatte (Drücken und Loslassen kommen dann im 15-ms-Raster direkt hintereinander).</p>
+  </div>
+</div>
+
+<script>
+const BITS = {1:'Home/TV', 2:'Vol+', 4:'Vol−', 8:'Click', 16:'Power', 32:'Siri', 64:'Back', 128:'Mute',
+              256:'Play/Pause', 512:'Up', 1024:'Right', 2048:'Down', 4096:'Left'};
+const $ = id => document.getElementById(id);
+const ms = v => v == null ? '–' : (v >= 10000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms');
+const clock = t => { const d = new Date(t * 1000); return d.toLocaleTimeString('de-DE') + '.' + String(d.getMilliseconds()).padStart(3, '0'); };
+
+let mask = 0, pressAt = {}, lastRelease = null, advT = null, connT = null, awaitFirst = false;
+let presses = [], touchArrivals = [];
+
+function setStatus(text, cls, sub) {
+  $('status').innerHTML = `<span class="dot ${cls || ''}"></span>${text}`;
+  if (sub !== undefined) $('status-sub').textContent = sub || ' ';
+}
+function highlight() {
+  document.querySelectorAll('[data-bit]').forEach(el => el.classList.toggle('on', (mask & +el.dataset.bit) !== 0));
+}
+function renderRows() {
+  const body = $('rows');
+  if (!presses.length) { body.innerHTML = '<tr><td colspan="5" class="empty">Noch kein Tastendruck. Drück eine Taste auf der Remote.</td></tr>'; }
+  else body.innerHTML = presses.slice(-40).reverse().map(p =>
+    `<tr><td>${clock(p.t)}</td><td>${p.name}</td><td>${ms(p.dur)}</td><td>${ms(p.gap)}</td><td class="note">${p.buffered ? 'nachgeliefert' : ''}</td></tr>`).join('');
+  const live = presses.filter(p => !p.buffered).map(p => p.dur).sort((a, b) => a - b);
+  $('count').textContent = presses.length;
+  $('count-sub').textContent = live.length ? `Median gedrückt: ${ms(live[live.length >> 1])}` : ' ';
+}
+function onButtons(ev) {
+  if (awaitFirst) {
+    awaitFirst = false;
+    $('reconn').textContent = advT != null ? ms((ev.t - advT) * 1000) : ms((ev.t - connT) * 1000);
+    $('reconn-sub').textContent = advT != null
+      ? `Aufwachen → verbunden ${ms((connT - advT) * 1000)}, → erste Taste ${ms((ev.t - connT) * 1000)}`
+      : 'verbunden → erste Taste (Aufwachen nicht gesehen)';
+  }
+  for (const key of Object.keys(BITS)) {
+    const bit = +key, was = mask & bit, is = ev.mask & bit;
+    if (is && !was) pressAt[bit] = ev.t;
+    if (!is && was && pressAt[bit] != null) {
+      const dur = (ev.t - pressAt[bit]) * 1000;
+      presses.push({t: pressAt[bit], name: BITS[bit], dur, buffered: dur < 25,
+                    gap: lastRelease != null ? (pressAt[bit] - lastRelease) * 1000 : null});
+      lastRelease = ev.t;
+    }
+  }
+  mask = ev.mask; highlight(); renderRows();
+}
+function onEvent(ev) {
+  switch (ev.type) {
+    case 'start': setStatus('wartet auf Remote', '', 'Taste drücken zum Aufwecken'); break;
+    case 'adv': advT = ev.t; setStatus('aufgewacht …', '', `Advertising gesehen, RSSI ${ev.rssi} dBm`); break;
+    case 'connected': connT = ev.t; awaitFirst = true; setStatus('verbunden', 'ok', `seit ${clock(ev.t)}`); break;
+    case 'disconnected': advT = null; mask = 0; pressAt = {}; highlight(); setStatus('getrennt', 'bad', `um ${clock(ev.t)}`); break;
+    case 'wait': setStatus('wartet auf Remote', '', 'Taste drücken zum Aufwecken'); break;
+    case 'report':
+      if (ev.id === 0xFB) onButtons(ev);
+      else if (ev.id === 0xFC) touchArrivals.push(performance.now());
+      break;
+  }
+}
+setInterval(() => {
+  const cut = performance.now() - 1000;
+  touchArrivals = touchArrivals.filter(t => t > cut);
+  $('touch').textContent = touchArrivals.length + '/s';
+}, 250);
+$('clear').onclick = () => { presses = []; lastRelease = null; renderRows(); };
+
+const source = new EventSource('/events');
+source.onmessage = m => onEvent(JSON.parse(m.data));
+source.onerror = () => setStatus('keine Verbindung zum Pi', 'bad', 'live.py läuft nicht oder ist nicht erreichbar');
+</script>
+</body>
+</html>

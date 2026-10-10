@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siri Remote ESP32 Bridge – Installer</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 40px 20px; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .sub { opacity: .7; margin: 0 0 28px; }
+  ol { padding-left: 22px; } li { margin: 8px 0; }
+  .box { border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 12px; padding: 18px 20px; margin: 24px 0; }
+  .small { font-size: 14px; opacity: .75; }
+  hr { border: 0; border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); margin: 34px 0; }
+</style>
+<script type="module" src="https://unpkg.com/esp-web-tools@10.1.1/dist/web/install-button.js?module"></script>
+</head>
+<body>
+<main>
+  <h1>Siri Remote ESP32 Bridge</h1>
+  <p class="sub">Firmware <span id="version">…</span> direkt aus dem Browser auf den ESP32-S3 spielen.</p>
+
+  <ol>
+    <li>ESP32-S3 per USB an diesen Rechner stecken – mit einem Kabel, das Daten kann.</li>
+    <li>Auf „Installieren“ klicken und den Anschluss des ESP auswählen.</li>
+    <li>Warten, bis der Balken durch ist. Danach den ESP an den Mediaplayer stecken.</li>
+  </ol>
+
+  <div class="box">
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate" style="font:inherit;padding:10px 22px;border-radius:8px;border:0;background:#1f6fd6;color:#fff;font-weight:600;cursor:pointer">Installieren</button>
+      <span slot="unsupported">Dieser Browser kann keine USB-Geräte ansprechen. Bitte Chrome oder Edge auf einem Rechner verwenden.</span>
+      <span slot="not-allowed">Die Installation braucht eine HTTPS-Seite.</span>
+    </esp-web-install-button>
+  </div>
+
+  <p class="small">Die Installation löscht den gesamten Flash des ESP, also auch eine bestehende Kopplung und alle Einstellungen.
+    Für Updates eines laufenden Dongles lieber die <b>…-ota.bin</b> aus dem Release über dessen Weboberfläche einspielen.</p>
+  <p class="small">Geht der ESP nicht von selbst in den Flash-Modus: BOOT gedrückt halten, RESET kurz tippen, BOOT loslassen, dann erneut auf „Installieren“.</p>
+
+  <hr>
+  <p class="small"><b>English:</b> Plug the ESP32-S3 into this computer, click the button above and pick its serial port.
+    Installing erases the whole flash, including pairing and settings. Needs Chrome or Edge on a desktop.
+    If the ESP does not enter flash mode by itself: hold BOOT, tap RESET, release BOOT, try again.</p>
+</main>
+<script>
+  fetch('manifest.json').then(r => r.json()).then(m => document.getElementById('version').textContent = m.version).catch(() => {});
+</script>
+</body>
+</html>

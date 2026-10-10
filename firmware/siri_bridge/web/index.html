@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Siri Bridge</title>
+<script>
+  // Vor dem ersten Zeichnen: gespeicherte Wahl für hell/dunkel anwenden (sonst folgt die Seite dem System).
+  try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+  :root {
+    color-scheme:light;
+    --bg:#f3f3f0; --panel:#fff; --panel2:#f6f6f3; --text:#1b1b19; --muted:#6a6a64; --line:#deddd6;
+    --accent:#1f6fd6; --on-accent:#fff; --accent-soft:#e3eefc; --ok:#2b8a3e; --wait:#b7791f; --bad:#c92a2a; --violet:#8a4fd8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme=light]) {
+      color-scheme:dark;
+      --bg:#141413; --panel:#1e1e1c; --panel2:#262623; --text:#ecece7; --muted:#9b9b93; --line:#343430;
+      --accent:#6aa9ff; --on-accent:#0b1830; --accent-soft:#1d2b40; --ok:#69db7c; --wait:#f0b65a; --bad:#ff8787; --violet:#b592f0;
+    }
+  }
+  :root[data-theme=dark] {
+    color-scheme:dark;
+    --bg:#141413; --panel:#1e1e1c; --panel2:#262623; --text:#ecece7; --muted:#9b9b93; --line:#343430;
+    --accent:#6aa9ff; --on-accent:#0b1830; --accent-soft:#1d2b40; --ok:#69db7c; --wait:#f0b65a; --bad:#ff8787; --violet:#b592f0;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:1080px; margin:0 auto; padding:22px 20px 60px; }
+  h2 { font-size:15px; margin:0 0 12px; font-weight:650; }
+  button, select, input { font:inherit; color:inherit; }
+  button { padding:7px 14px; border-radius:8px; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
+  button:hover:not(:disabled) { border-color:var(--muted); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600; }
+  button.danger { color:var(--bad); }
+  button.armed { background:var(--bad); border-color:var(--bad); color:#fff; }
+  button:disabled { opacity:.5; cursor:default; }
+  select, input[type=text], input[type=password], input[type=number] { padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); max-width:100%; }
+  input[type=number] { width:96px; }
+  input[type=file] { max-width:100%; }
+  input[type=file]::file-selector-button { font:inherit; color:inherit; padding:7px 14px; margin-right:12px; border-radius:8px; border:1px solid var(--line); background:var(--panel); cursor:pointer; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* Kopf: Zustand auf einen Blick */
+  .hero { display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .state { display:flex; align-items:center; gap:16px; min-width:0; }
+  .beacon { width:18px; height:18px; border-radius:50%; background:var(--muted); flex:none; box-shadow:0 0 0 6px color-mix(in srgb, currentColor 18%, transparent); color:var(--muted); }
+  .beacon.ok { background:var(--ok); color:var(--ok); } .beacon.wait { background:var(--wait); color:var(--wait); } .beacon.bad { background:var(--bad); color:var(--bad); }
+  .state h1 { font-size:26px; line-height:1.15; margin:0; font-weight:680; letter-spacing:-.01em; }
+  .state p { margin:3px 0 0; color:var(--muted); }
+  .brand { display:flex; align-items:center; gap:14px; text-align:right; color:var(--muted); font-size:13px; }
+  .brand b { display:block; color:var(--text); font-size:15px; }
+  #theme { width:36px; height:36px; padding:0; border-radius:50%; font-size:16px; line-height:1; }
+
+  .note { border:1px solid var(--accent); background:var(--accent-soft); border-radius:12px; padding:12px 16px; margin-bottom:16px; }
+  .note b { display:block; margin-bottom:2px; }
+
+  /* Reiter */
+  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:18px; overflow-x:auto; }
+  .tabs button { border:0; border-bottom:2px solid transparent; border-radius:0; background:none; padding:9px 14px; color:var(--muted); white-space:nowrap; }
+  .tabs button[aria-selected=true] { color:var(--text); border-bottom-color:var(--accent); font-weight:600; }
+  .tabs button.dirty::after { content:" ●"; color:var(--wait); font-size:11px; vertical-align:2px; }
+
+  .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; align-items:start; }
+  .cards.wide { grid-template-columns:repeat(auto-fit, minmax(min(100%, 400px), 1fr)); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  dl { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:0; }
+  dt { color:var(--muted); } dd { margin:0; font-weight:600; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; text-align:right; }
+  .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; align-items:center; }
+  .hint { color:var(--muted); font-size:13px; margin:12px 0 0; }
+  .field { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; justify-content:space-between; padding:9px 0; border-top:1px solid var(--line); }
+  .field:first-of-type { border-top:0; padding-top:0; }
+  .field > span:first-child { min-width:150px; flex:1 1 150px; }
+  .field small { display:block; color:var(--muted); font-size:12px; }
+  label.check { display:inline-flex; gap:7px; align-items:center; }
+  .savebar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:16px; }
+  .savebar span { color:var(--muted); font-size:13px; }
+  h3.group { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:26px 0 10px; }
+  h3.group:first-child { margin-top:4px; }
+
+  /* LED-Legende */
+  .legend { display:grid; grid-template-columns:auto 1fr; gap:9px 12px; align-items:center; margin:0; font-size:14px; }
+  .lamp { width:13px; height:13px; border-radius:50%; background:var(--accent); }
+  .lamp.fast { animation:blink .4s steps(1) infinite; } .lamp.flash { animation:flash 2s steps(1) infinite; }
+  .lamp.slow { animation:blink 1s steps(1) infinite; background:var(--violet); } .lamp.white { background:#c9c9c9; animation:blink .12s steps(1) infinite; }
+  @keyframes blink { 50% { opacity:.12; } } @keyframes flash { 0% { opacity:1; } 6%,100% { opacity:.12; } }
+
+  /* Tasten: gezeichnete Remote + Editor. Maße nach der echten Siri Remote (Breite ≈ 26 % der Höhe). */
+  .keys { display:grid; grid-template-columns:220px minmax(0, 1fr); gap:16px; align-items:start; }
+  @media (max-width:720px) { .keys { grid-template-columns:1fr; } }
+  .remote-wrap { padding:22px 0 18px; display:flex; flex-direction:column; align-items:center; }
+  .remote-wrap .hint { margin:16px 14px 0; text-align:center; }
+  .remote { position:relative; width:124px; height:470px; border-radius:26px; margin-right:22px;
+            background:linear-gradient(180deg, #f6f6f7 0%, #e3e3e6 38%, #c3c3c8 78%, #b4b4b9 100%);
+            box-shadow:inset 0 0 0 1px rgba(0,0,0,.10), inset 0 1px 0 #fff, 0 6px 18px rgba(0,0,0,.18); }
+  .mic { position:absolute; top:23px; left:58px; width:8px; height:3px; border-radius:2px; background:#3a3a3c; }
+  .rk { position:absolute; display:grid; place-items:center; padding:0; border:0; border-radius:50%; background:#1c1c1e; color:#f2f2f4;
+        transition:background .25s ease-out, box-shadow .25s ease-out; }
+  .rk:hover:not(:disabled) { background:#3a3a3d; }
+  .rk svg { width:54%; height:54%; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .rk.sel { box-shadow:0 0 0 2px #e3e3e6, 0 0 0 5px var(--accent); }
+  .rk.off { color:#8e8e93; }
+  #tab-start .rk.sel { box-shadow:none; }
+  .rk.hit { background:var(--accent) !important; color:#fff; box-shadow:0 0 0 5px color-mix(in srgb, var(--accent) 40%, transparent); transition:none; }
+  .power { top:14px; left:88px; width:22px; height:22px; background:#ececef; color:#1c1c1e; box-shadow:inset 0 0 0 1px #8e8e93; }
+  .power:hover:not(:disabled) { background:#fff; }
+  .pad { position:absolute; top:47px; left:7px; width:110px; height:110px; border-radius:50%; background:#1c1c1e; }
+  .click { top:23px; left:23px; width:64px; height:64px; background:#232325; box-shadow:inset 0 0 0 1px #3a3a3c; }
+  .seg { width:28px; height:28px; background:transparent; }
+  .seg::before { content:""; width:4px; height:4px; border-radius:50%; background:currentColor; }
+  .seg:hover:not(:disabled) { background:#3a3a3d; }
+  .seg.sel { box-shadow:0 0 0 2px var(--accent); }
+  .up { top:-2px; left:41px; } .down { bottom:-2px; left:41px; } .left { left:-2px; top:41px; } .right { right:-2px; top:41px; }
+  .back { top:160px; left:13px; width:44px; height:44px; } .home { top:160px; left:67px; width:44px; height:44px; }
+  .play { top:212px; left:13px; width:44px; height:44px; } .mute { top:264px; left:13px; width:44px; height:44px; }
+  .volup { top:212px; left:67px; width:44px; height:48px; border-radius:22px 22px 0 0; } .voldn { top:260px; left:67px; width:44px; height:48px; border-radius:0 0 22px 22px; }
+  .volup svg, .voldn svg { width:44%; height:44%; }
+  .siri { top:78px; right:-5px; width:6px; height:50px; border-radius:0 4px 4px 0; background:#c9c9ce; box-shadow:inset 0 0 0 1px rgba(0,0,0,.18); }
+  .siri:hover:not(:disabled) { background:#fff; }
+  .siri-label { position:absolute; top:94px; right:-38px; font-size:11px; color:var(--muted); pointer-events:none; }
+
+  .editor h3 { margin:0; font-size:19px; } .editor .now { color:var(--muted); margin:2px 0 14px; }
+  .segctl { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+  .segctl button { border:0; border-radius:0; background:none; padding:7px 15px; }
+  .segctl button + button { border-left:1px solid var(--line); }
+  .segctl button[aria-pressed=true] { background:var(--accent); color:var(--on-accent); font-weight:600; }
+  .chips { display:flex; gap:6px; } .chips button { padding:5px 12px; border-radius:99px; }
+  .chips button[aria-pressed=true] { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .edrow { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:14px; min-height:36px; }
+  .edrow > span:first-child { min-width:92px; color:var(--muted); }
+  .all { margin-top:18px; border-top:1px solid var(--line); padding-top:12px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:2px 18px; }
+  .all button { display:flex; justify-content:space-between; gap:10px; width:100%; border:0; background:none; padding:5px 8px; border-radius:6px; text-align:left; }
+  .all button:hover { background:var(--panel2); } .all button.sel { background:var(--accent-soft); }
+  .all span:last-child { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .pw, .pick { display:inline-flex; gap:6px; align-items:center; max-width:100%; } .pw button, .pick button { padding:7px 10px; line-height:1; }
+  .pick select { min-width:0; max-width:230px; }
+  progress { width:100%; height:8px; margin-top:10px; }
+  .reset { display:grid; grid-template-columns:1fr auto; gap:12px 16px; align-items:center; }
+  .reset div b { display:block; } .reset div span { color:var(--muted); font-size:13px; }
+  .reset > div:nth-child(n+3) { border-top:1px solid var(--line); padding-top:12px; }
+  .reset > button:nth-child(n+3) { margin-top:12px; }
+  .reset button { white-space:nowrap; }
+
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:9px 16px; border-radius:99px; font-size:14px; z-index:6; max-width:calc(100% - 32px); }
+  .toast.err { background:var(--bad); color:#fff; }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="state">
+      <div class="beacon" id="beacon"></div>
+      <div><h1 id="title">Lädt …</h1><p id="subtitle">&nbsp;</p></div>
+    </div>
+    <div class="brand">
+      <div><b>Siri Bridge</b><span id="version">&nbsp;</span></div>
+      <button id="theme" title="Hell / Dunkel umschalten" aria-label="Hell / Dunkel umschalten"></button>
+    </div>
+  </header>
+
+  <div class="note" id="apnote" hidden>
+    <b>WLAN einrichten</b>
+    Der Dongle läuft gerade in seinem eigenen Netz. Unter <a href="#einst">Einstellungen → WLAN</a> dein Heimnetz auswählen und das Passwort eintragen –
+    danach wechselt er dorthin. Klappt die Anmeldung nicht, öffnet er nach etwa 15 Sekunden wieder dieses Netz.
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="start">Übersicht</button>
+    <button role="tab" data-tab="tasten">Tasten</button>
+    <button role="tab" data-tab="einst">Einstellungen</button>
+  </nav>
+
+  <!-- Übersicht -->
+  <section id="tab-start">
+    <div class="keys">
+      <div class="card remote-wrap">
+        <div class="remote"></div>
+        <p class="hint">Live: gedrückte Tasten leuchten auf. Ein Klick auf eine Taste öffnet ihre Belegung.</p>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <h2>Remote</h2>
+          <dl>
+            <dt>Gekoppelt mit</dt><dd id="bond">–</dd>
+            <dt>Verbindung</dt><dd id="link">–</dd>
+            <dt>Signal</dt><dd id="rssi">–</dd>
+            <dt>Akku</dt><dd id="batt">–</dd>
+            <dt>Letzte Taste</dt><dd id="key">–</dd>
+            <dt>Sie sendet</dt><dd id="keysends">–</dd>
+          </dl>
+          <div class="actions"><button class="danger" id="unpair">Remote entkoppeln</button></div>
+          <p class="hint">Neu koppeln: Remote direkt an den Dongle halten und <b>Zurück + Lauter</b> etwa 5 Sekunden drücken. Das geht nur, solange keine Remote gespeichert ist.</p>
+        </div>
+        <div class="card">
+          <h2>Dongle</h2>
+          <dl>
+            <dt>Firmware</dt><dd id="fwver">–</dd>
+            <dt>Läuft seit</dt><dd id="uptime">–</dd>
+            <dt>WLAN</dt><dd id="wifi">–</dd>
+            <dt>Adresse</dt><dd id="ip">–</dd>
+            <dt>WLAN &amp; diese Seite</dt><dd id="left">–</dd>
+          </dl>
+          <div class="actions"><button id="setupoff">WLAN jetzt ausschalten</button><button id="reboot">Dongle neu starten</button></div>
+          <p class="hint">Ist das WLAN aus, ist auch diese Seite nicht erreichbar – die Remote funktioniert weiter. Wieder einschalten: BOOT-Taste am Dongle kurz drücken<span id="siri-note"></span>.</p>
+        </div>
+        <div class="card" id="legend-box">
+          <h2>Was die Status-LED zeigt</h2>
+          <div class="legend">
+            <div class="lamp fast"></div><div><b>Schnelles Blinken</b> – keine Remote gekoppelt</div>
+            <div class="lamp flash"></div><div><b>Aufblitzen alle 2 Sekunden</b> – gekoppelt, Remote schläft</div>
+            <div class="lamp"></div><div><b>Dauerlicht</b> – Remote verbunden<span id="dark-note"></span></div>
+            <div class="lamp slow"></div><div><b>Langsames Blinken<span class="rgb"> (violett)</span></b> – WLAN und diese Seite sind eingeschaltet</div>
+            <div class="lamp white"></div><div><b>Flackern<span class="rgb"> (weiß)</span></b> – Firmware-Update läuft</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tasten -->
+  <section id="tab-tasten" hidden>
+    <div class="keys">
+      <div class="card remote-wrap"><div class="remote"></div></div>
+      <div class="card editor">
+        <h3 id="ed-name">&nbsp;</h3>
+        <div class="now" id="ed-now">&nbsp;</div>
+        <div id="ed-body" hidden>
+          <div class="segctl" id="ed-type">
+            <button type="button" data-t="0">Nichts</button><button type="button" data-t="1">Tastatur</button><button type="button" data-t="2">Multimedia</button>
+          </div>
+          <div class="edrow" id="ed-keyrow"><span>Taste</span><select id="ed-key"></select></div>
+          <div class="edrow" id="ed-modrow"><span>Zusatztasten</span>
+            <div class="chips" id="ed-mods"><button type="button" data-m="1">Strg</button><button type="button" data-m="2">Umschalt</button><button type="button" data-m="4">Alt</button></div></div>
+          <div class="edrow" id="ed-consrow"><span>Funktion</span><select id="ed-cons"></select></div>
+        </div>
+        <div class="all" id="all"></div>
+        <div class="savebar"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
+        <p class="hint"><label class="check"><input type="checkbox" id="follow"> Beim Drücken einer Taste auf der Remote automatisch zu ihr springen</label></p>
+        <p class="hint">Gedrückte Tasten leuchten links live auf. Gesendet werden USB-Tastencodes (US-Layout); gedrückt halten wiederholt die Taste – das erledigt das angeschlossene Gerät.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Einstellungen -->
+  <section id="tab-einst" hidden>
+    <h3 class="group">Dongle</h3>
+    <div class="cards wide">
+      <div class="card">
+        <h2>Status-LED</h2>
+        <div class="field"><span>Art der LED</span>
+          <select id="ledType"><option value="0">keine</option><option value="1">RGB-LED (WS2812)</option><option value="2">einfache LED</option></select></div>
+        <div class="field led-any"><span>GPIO-Pin</span><input type="number" id="ledPin" min="0" max="48"></div>
+        <div class="field led-rgb"><span>Helligkeit<small id="bri-val"></small></span><input type="range" id="ledBri" min="1" max="255"></div>
+        <div class="field led-gpio"><span>Polarität</span><label class="check"><input type="checkbox" id="ledInv"> leuchtet bei LOW (invertiert)</label></div>
+        <div class="field led-any"><span>Im Betrieb</span><label class="check"><input type="checkbox" id="ledDark"> aus, solange die Remote verbunden ist</label></div>
+        <p class="hint">Voreinstellung für den ESP32-S3 Super Mini: RGB-LED an GPIO 48. Ein falscher Pin kann andere Funktionen des Boards stören – im Zweifel „keine“ wählen.</p>
+      </div>
+      <div class="card">
+        <h2>Verbindung zur Remote</h2>
+        <div class="field"><span>Verbindungsintervall<small>kürzer = schnellere Reaktion, mehr Akkuverbrauch</small></span>
+          <select id="itv"><option value="6">7,5 ms (schnellste)</option><option value="9">11,25 ms</option><option value="12">15 ms (Standard)</option></select></div>
+        <div class="field"><span>Alte Tastendrücke verwerfen<small>Millisekunden nach dem Verbinden, 0 = aus</small></span><input type="number" id="stale" min="0" max="5000" step="50"></div>
+        <p class="hint">Das Intervall gilt ab der nächsten Verbindung. Die Remote puffert Tastendrücke, während sie nicht verbunden ist, und liefert sie beim Verbinden nach; der Filter unterdrückt solche Altlasten.</p>
+      </div>
+    </div>
+    <h3 class="group">WLAN</h3>
+    <div class="cards wide">
+      <div class="card">
+        <h2>Heimnetz</h2>
+        <form id="wifiform">
+          <div class="field"><span>Netzwerk<small id="msg-scan"></small></span>
+            <span class="pick"><select id="netsel"></select><button type="button" id="scan" title="Netzwerke suchen" aria-label="Netzwerke suchen">↻</button></span></div>
+          <div class="field" id="ssidrow" hidden><span>Netzwerkname</span><input type="text" name="ssid" maxlength="32" autocomplete="off"></div>
+          <div class="field"><span>Passwort</span><span class="pw"><input type="password" name="pass" maxlength="64" autocomplete="new-password"><button type="button" id="eye" title="Passwort anzeigen" aria-label="Passwort anzeigen" aria-pressed="false">👁</button></span></div>
+          <div class="actions"><button class="primary" type="submit">Mit diesem WLAN verbinden</button></div>
+        </form>
+        <p class="hint">Ohne gespeichertes WLAN öffnet der Dongle das offene Netz <b>siri-bridge-setup</b>, Adresse <b>http://192.168.4.1</b>.</p>
+      </div>
+      <div class="card">
+        <h2>Erreichbarkeit dieser Seite</h2>
+        <div class="field"><span>WLAN automatisch ausschalten<small>nach dieser Zeit ohne Zugriff auf die Seite</small></span>
+          <select id="mins"><option value="5">nach 5 Minuten</option><option value="10">nach 10 Minuten</option><option value="30">nach 30 Minuten</option><option value="60">nach 60 Minuten</option><option value="0">nie – dauerhaft an</option></select></div>
+        <div class="field"><span>Per Fernbedienung einschalten</span><label class="check"><input type="checkbox" id="siri"> Siri 5 Sekunden halten</label></div>
+        <p class="hint">Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar – ohne Passwort, einschließlich Firmware-Update.</p>
+      </div>
+    </div>
+    <div class="savebar"><button class="primary save">Einstellungen speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
+
+    <h3 class="group">Wartung</h3>
+    <div class="cards wide">
+      <div class="card">
+        <h2>Firmware-Update</h2>
+        <input type="file" id="fw" accept=".bin">
+        <progress id="fwprog" value="0" max="100" hidden></progress>
+        <div class="actions"><button class="primary" id="fwgo">Update einspielen</button></div>
+        <p class="hint">Die Datei <b>…-ota.bin</b> aus dem Release wählen, nicht die merged-Datei. Kopplung und Einstellungen bleiben erhalten; danach startet der Dongle neu.</p>
+      </div>
+      <div class="card">
+        <h2>Sicherung</h2>
+        <div class="actions" style="margin-top:0">
+          <button id="export">Konfiguration herunterladen</button>
+          <button id="importbtn">Sicherung laden …</button><input type="file" id="import" accept=".json,application/json" hidden>
+        </div>
+        <p class="hint">Die Sicherung enthält Tastenbelegung, LED und die Optionen dieser Seite als JSON-Datei – nicht das WLAN-Passwort und nicht die Kopplung mit der Remote. Eine geladene Sicherung wird erst mit „Speichern“ übernommen.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Zurücksetzen</h2>
+      <div class="reset">
+        <div><b>WLAN vergessen</b><span>Löscht die gespeicherten WLAN-Zugangsdaten. Der Dongle öffnet danach sein eigenes Netz „siri-bridge-setup“.</span></div>
+        <button class="danger" id="wififorget">WLAN vergessen</button>
+        <div><b>Einstellungen zurücksetzen</b><span>Tastenbelegung, LED und die Optionen dieser Seite auf Standard. Kopplung und WLAN bleiben erhalten.</span></div>
+        <button class="danger" id="defaults">Einstellungen zurücksetzen</button>
+        <div><b>Werkszustand herstellen</b><span>Löscht alles: Kopplung mit der Remote, Einstellungen und WLAN. Der Dongle startet neu wie frisch geflasht.</span></div>
+        <button class="danger" id="factory">Werkszustand herstellen</button>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const KEYS = [[0x52,'Pfeil hoch'],[0x51,'Pfeil runter'],[0x50,'Pfeil links'],[0x4F,'Pfeil rechts'],[0x28,'Enter'],[0x29,'Esc'],[0x2A,'Backspace'],
+  [0x2B,'Tab'],[0x2C,'Leertaste'],[0x4A,'Pos1'],[0x4D,'Ende'],[0x4B,'Bild auf'],[0x4E,'Bild ab'],[0x49,'Einfg'],[0x4C,'Entf'],[0x65,'Menütaste'],
+  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((c,i)=>[4+i,c]), ...'123456789'.split('').map((c,i)=>[0x1E+i,c]), [0x27,'0'],
+  ...Array.from({length:12},(_,i)=>[0x3A+i,'F'+(i+1)]), [0x2D,'-'],[0x2E,'='],[0x2F,'['],[0x30,']'],[0x31,'\\'],[0x33,';'],[0x34,"'"],[0x35,'`'],[0x36,','],[0x37,'.'],[0x38,'/']];
+const CONSUMER = [[0xE9,'Lauter'],[0xEA,'Leiser'],[0xE2,'Stumm'],[0xCD,'Play/Pause'],[0xB0,'Play'],[0xB1,'Pause'],[0xB7,'Stop'],[0xB5,'Nächster Titel'],
+  [0xB6,'Vorheriger Titel'],[0xB3,'Vorspulen'],[0xB4,'Zurückspulen'],[0x223,'Home'],[0x224,'Zurück'],[0x221,'Suche'],[0x40,'Menü'],[0x9C,'Kanal +'],
+  [0x9D,'Kanal −'],[0x8D,'Programmführer'],[0x30,'Power'],[0x32,'Standby']];
+const NAMES = {'Home/TV':'Home / TV','Vol+':'Lauter','Vol-':'Leiser','Click':'Clickpad-Mitte','Power':'Power','Siri':'Siri','Back':'Zurück','Mute':'Mute',
+  'Play/Pause':'Play / Pause','Up':'Ring oben','Right':'Ring rechts','Down':'Ring unten','Left':'Ring links'};
+const TABS = ['start','tasten','einst'];
+const REMOTE = `<div class="mic"></div>
+<button class="rk power" data-i="4"><svg viewBox="0 0 24 24"><path d="M12 4v8M7.5 7a7 7 0 1 0 9 0"/></svg></button>
+<div class="pad">
+<button class="rk seg up" data-i="9"></button><button class="rk seg right" data-i="10"></button>
+<button class="rk seg down" data-i="11"></button><button class="rk seg left" data-i="12"></button>
+<button class="rk click" data-i="3"></button>
+</div>
+<button class="rk back" data-i="6"><svg viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button>
+<button class="rk home" data-i="0"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="10.5" rx="1.5"/><path d="M9.5 20h5"/></svg></button>
+<button class="rk play" data-i="8"><svg viewBox="0 0 24 24"><path d="M4.5 6.5v11l8-5.5zM16 6.5v11M19.5 6.5v11"/></svg></button>
+<button class="rk mute" data-i="7"><svg viewBox="0 0 24 24"><path d="M5.5 10v4h3l4 3.5v-11l-4 3.5zM4.5 4.5l15 15"/></svg></button>
+<button class="rk volup" data-i="1"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+<button class="rk voldn" data-i="2"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+<button class="rk siri" data-i="5"></button>
+<div class="siri-label">Siri</div>`;
+const OTHER = '\u0000other';
+const $ = id => document.getElementById(id);
+const all = sel => document.querySelectorAll(sel);
+const dur = s => s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min' : s >= 60 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : s + ' s';
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+let saved = null, draft = null, selected = 3, scannedOnce = false, toastTimer = 0, savedSsid = '';
+
+// ---- Hilfen -------------------------------------------------------------------------------------
+function toast(text, err) {
+  const el = $('toast'); el.textContent = text; el.className = 'toast' + (err ? ' err' : ''); el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, err ? 7000 : 3500);
+}
+async function post(url, body) { const r = await fetch(url, {method:'POST', body}); if (!r.ok) throw new Error(await r.text() || r.status); return r.text(); }
+// Zweistufige Bestätigung im Knopf selbst statt eines Browser-Dialogs.
+function confirmed(button, action) {
+  const label = button.textContent; let timer = 0;
+  button.onclick = async () => {
+    if (!button.classList.contains('armed')) {
+      button.classList.add('armed'); button.textContent = 'Wirklich? Nochmal klicken';
+      timer = setTimeout(() => { button.classList.remove('armed'); button.textContent = label; }, 4000);
+      return;
+    }
+    clearTimeout(timer); button.classList.remove('armed'); button.textContent = label;
+    try { await action(); } catch (err) { toast('Fehler: ' + err.message, true); }
+  };
+}
+const label = a => a.t === 1 ? [a.m & 1 ? 'Strg' : '', a.m & 2 ? 'Umschalt' : '', a.m & 4 ? 'Alt' : '', (KEYS.find(k => k[0] === a.c) || [0, '?'])[1]].filter(Boolean).join(' + ')
+  : a.t === 2 ? (CONSUMER.find(k => k[0] === a.c) || [0, '?'])[1] : 'nichts';
+
+// ---- Hell / Dunkel ------------------------------------------------------------------------------
+function isDark() { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+function paintTheme() { $('theme').textContent = isDark() ? '☀' : '☾'; }
+$('theme').onclick = () => { const next = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = next; store.set('theme', next); paintTheme(); };
+paintTheme();
+
+// ---- Reiter -------------------------------------------------------------------------------------
+function showTab(name) {
+  if (name === 'netz' || name === 'geraet') name = 'einst';
+  if (!TABS.includes(name)) name = 'start';
+  for (const t of TABS) $('tab-' + t).hidden = t !== name;
+  all('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+}
+all('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+window.onhashchange = () => showTab(location.hash.slice(1));
+
+// ---- Einstellungen: Entwurf, Speichern ----------------------------------------------------------
+const SETTINGS = ['ledType','ledPin','ledBri','ledInv','ledDark','itv','stale','mins','siri'];
+const differs = keys => saved && keys.some(k => JSON.stringify(saved[k]) !== JSON.stringify(draft[k]));
+function syncDirty() {
+  const keysDirty = differs(['map']), settingsDirty = differs(SETTINGS), any = keysDirty || settingsDirty;
+  document.querySelector('[data-tab=tasten]').classList.toggle('dirty', keysDirty);
+  document.querySelector('[data-tab=einst]').classList.toggle('dirty', settingsDirty);
+  all('.save, .discard').forEach(b => b.disabled = !any);
+  all('.dirtynote').forEach(e => e.textContent = any ? 'Ungespeicherte Änderungen' + (keysDirty && settingsDirty ? ' (Tasten und Einstellungen)' : '') : 'Alles gespeichert');
+}
+function loadConfig(c) { saved = c; draft = JSON.parse(JSON.stringify(c)); renderConfig(); }
+function renderConfig() {
+  renderKeys(); renderEditor();
+  $('ledType').value = draft.ledType; $('ledPin').value = draft.ledPin; $('ledBri').value = draft.ledBri; $('ledInv').checked = !!draft.ledInv; $('ledDark').checked = !!draft.ledDark;
+  $('itv').value = draft.itv; $('stale').value = draft.stale; $('siri').checked = !!draft.siri;
+  if (![...$('mins').options].some(o => +o.value === draft.mins)) $('mins').add(new Option(`nach ${draft.mins} Minuten`, draft.mins));
+  $('mins').value = draft.mins;
+  syncLed(); syncDirty();
+}
+function syncLed() {
+  const t = +$('ledType').value;
+  all('.led-any').forEach(e => e.hidden = t === 0); all('.led-rgb').forEach(e => e.hidden = t !== 1); all('.led-gpio').forEach(e => e.hidden = t !== 2);
+  $('bri-val').textContent = Math.round($('ledBri').value / 255 * 100) + ' %';
+}
+for (const [id, kind] of [['ledType','n'],['ledPin','n'],['ledBri','n'],['ledInv','c'],['ledDark','c'],['itv','n'],['stale','n'],['mins','n'],['siri','c']]) {
+  $(id).oninput = () => { draft[id] = kind === 'c' ? ($(id).checked ? 1 : 0) : +$(id).value; syncLed(); syncDirty(); };
+}
+all('.discard').forEach(b => b.onclick = () => { draft = JSON.parse(JSON.stringify(saved)); renderConfig(); });
+all('.save').forEach(b => b.onclick = async () => {
+  const body = new URLSearchParams();
+  draft.map.forEach((a, i) => body.set('m' + i, `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`));
+  for (const k of SETTINGS) body.set(k, draft[k]);
+  try { await post('/api/config', body); saved = null; await refresh(); toast('Gespeichert.'); } catch (err) { toast('Fehler: ' + err.message, true); }
+});
+
+// ---- Tasten -------------------------------------------------------------------------------------
+function renderKeys() {
+  all('.rk').forEach(b => {
+    const i = +b.dataset.i, a = draft.map[i];
+    b.classList.toggle('sel', i === selected); b.classList.toggle('off', a.t === 0);
+    b.title = `${NAMES[a.n] || a.n}: ${label(a)}`; b.setAttribute('aria-label', b.title);
+  });
+  $('all').innerHTML = '';
+  draft.map.forEach((a, i) => {
+    const b = document.createElement('button'); b.type = 'button'; if (i === selected) b.className = 'sel';
+    const n = document.createElement('span'); n.textContent = NAMES[a.n] || a.n; const v = document.createElement('span'); v.textContent = label(a);
+    b.append(n, v); b.onclick = () => select(i); $('all').append(b);
+  });
+}
+function renderEditor() {
+  const a = draft.map[selected];
+  $('ed-body').hidden = !a;
+  if (!a) return;
+  $('ed-name').textContent = NAMES[a.n] || a.n; $('ed-now').textContent = 'sendet: ' + label(a);
+  all('#ed-type button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.t === a.t));
+  $('ed-keyrow').hidden = $('ed-modrow').hidden = a.t !== 1; $('ed-consrow').hidden = a.t !== 2;
+  if (a.t === 1) $('ed-key').value = a.c; if (a.t === 2) $('ed-cons').value = a.c;
+  all('#ed-mods button').forEach(b => b.setAttribute('aria-pressed', !!(a.m & +b.dataset.m)));
+}
+function select(i) { if (!draft || i === selected) return; selected = i; renderKeys(); renderEditor(); }
+function edit(change) { change(draft.map[selected]); renderKeys(); renderEditor(); syncDirty(); }
+$('ed-key').innerHTML = KEYS.map(([c, n]) => `<option value="${c}">${n}</option>`).join('');
+$('ed-cons').innerHTML = CONSUMER.map(([c, n]) => `<option value="${c}">${n}</option>`).join('');
+all('.remote').forEach(r => r.innerHTML = REMOTE);
+all('.rk').forEach(b => b.onclick = () => { select(+b.dataset.i); if (b.closest('#tab-start')) showTab('tasten'); });
+all('#ed-type button').forEach(b => b.onclick = () => edit(a => {
+  a.t = +b.dataset.t; a.m = 0;
+  a.c = a.t === 1 ? (KEYS.some(k => k[0] === a.c) ? a.c : KEYS[0][0]) : a.t === 2 ? (CONSUMER.some(k => k[0] === a.c) ? a.c : CONSUMER[0][0]) : 0;
+}));
+$('ed-key').onchange = () => edit(a => a.c = +$('ed-key').value);
+$('ed-cons').onchange = () => edit(a => a.c = +$('ed-cons').value);
+all('#ed-mods button').forEach(b => b.onclick = () => edit(a => a.m ^= +b.dataset.m));
+
+// Live: gedrückte Tasten der echten Remote auf den Zeichnungen zeigen (nur solange eine davon sichtbar ist).
+let liveSeq = null; const flashUntil = {};
+$('follow').checked = store.get('follow', '1') === '1';
+$('follow').onchange = () => store.set('follow', $('follow').checked ? '1' : '0');
+async function pollLive() {
+  if (document.hidden || ($('tab-tasten').hidden && $('tab-start').hidden) || !draft) return;
+  let l; try { l = await (await fetch('/api/live')).json(); } catch (e) { return; }
+  const now = Date.now();
+  if (liveSeq !== null && l.seq !== liveSeq && l.last >= 0) {  // auch sehr kurze Drücke zwischen zwei Abfragen sichtbar machen
+    flashUntil[l.last] = now + 350;
+    if ($('follow').checked) select(l.last);
+  }
+  liveSeq = l.seq;
+  all('.rk').forEach(b => { const i = +b.dataset.i; b.classList.toggle('hit', !!(l.mask & (1 << i)) || (flashUntil[i] || 0) > now); });
+}
+setInterval(pollLive, 150);
+
+// ---- Status -------------------------------------------------------------------------------------
+function hero(cls, title, sub) { $('beacon').className = 'beacon ' + cls; $('title').textContent = title; $('subtitle').textContent = sub; }
+async function refresh() {
+  let s;
+  try { s = await (await fetch('/api/state')).json(); }
+  catch (e) { hero('', 'Dongle nicht erreichbar', 'Das WLAN des Dongles ist aus oder er startet gerade neu.'); return; }
+  const connected = s.ble === 'connected';
+  if (connected) hero('ok', 'Remote verbunden', s.lastKey ? `Letzte Taste: ${NAMES[s.lastKey] || s.lastKey}, vor ${dur(s.lastKeyAge)}` : 'Bereit – noch keine Taste gedrückt.');
+  else if (s.ble === 'connecting') hero('wait', 'Verbindet …', 'Die Remote hat sich gemeldet.');
+  else if (s.ble === 'searching') hero('wait', 'Remote schläft', 'Gekoppelt – sie verbindet sich beim nächsten Tastendruck.');
+  else hero('bad', 'Keine Remote gekoppelt', 'Remote direkt an den Dongle halten und Zurück + Lauter etwa 5 Sekunden drücken.');
+  $('version').textContent = 'Firmware ' + s.version;
+  $('bond').textContent = s.bond || 'keiner'; $('link').textContent = connected ? `${s.interval} ms Intervall` : 'getrennt';
+  $('rssi').textContent = connected ? `${s.rssi} dBm` : '–';
+  const low = s.batt !== undefined && s.batt <= 15 && s.power !== 0xAB && s.power !== 0xBB;
+  $('batt').textContent = s.batt === undefined ? '–' : `${s.batt} %` + (s.power === 0xAB ? ' · lädt' : s.power === 0xBB ? ' · am Kabel' : low ? ' · bald laden' : '');
+  $('batt').style.color = low ? 'var(--bad)' : '';
+  if (connected && low) $('subtitle').textContent = `Akku der Remote fast leer (${s.batt} %) – bitte laden.`;
+  $('key').textContent = s.lastKey ? `${NAMES[s.lastKey] || s.lastKey} · vor ${dur(s.lastKeyAge)}` : '–';
+  const lastAction = s.lastKey && s.cfg.map.find(a => a.n === s.lastKey); $('keysends').textContent = lastAction ? label(lastAction) : '–';
+  $('fwver').textContent = s.version; $('uptime').textContent = dur(s.uptime);
+  $('wifi').textContent = s.wifiMode === 'ap' ? 'eigenes Netz ' + s.ssid : s.wifiMode === 'sta' ? s.ssid : 'verbindet …';
+  $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 ? 'dauerhaft an' : 'aus in ' + dur(s.setupLeft);
+  $('apnote').hidden = s.wifiMode !== 'ap'; $('unpair').disabled = !s.bond;
+  if (!saved) { loadConfig(s.cfg); savedSsid = s.savedSsid || ''; fillNetworks([]); }
+  if (s.wifiMode === 'ap' && !scannedOnce) { scannedOnce = true; scan(); }
+  $('legend-box').hidden = s.cfg.ledType === 0;
+  all('.rgb').forEach(e => e.hidden = s.cfg.ledType !== 1);
+  $('dark-note').textContent = s.cfg.ledDark ? ' (bei dir: LED dann aus)' : '';
+  $('siri-note').textContent = s.cfg.siri ? ' oder die Siri-Taste der Remote 5 Sekunden halten' : '';
+}
+
+confirmed($('unpair'), async () => { await post('/api/unpair'); toast('Remote entkoppelt.'); refresh(); });
+confirmed($('setupoff'), async () => { await post('/api/setup-off'); toast('WLAN wird ausgeschaltet – diese Seite ist gleich nicht mehr erreichbar.'); });
+confirmed($('reboot'), async () => { await post('/api/reboot'); toast('Dongle startet neu …'); });
+confirmed($('defaults'), async () => { await post('/api/defaults'); saved = null; await refresh(); toast('Einstellungen zurückgesetzt.'); });
+confirmed($('factory'), async () => { await post('/api/factory-reset'); toast('Werkszustand hergestellt – der Dongle startet neu und öffnet sein eigenes Netz.'); });
+confirmed($('wififorget'), async () => {
+  await post('/api/wifi', new URLSearchParams({ssid:'', pass:''})); savedSsid = ''; fillNetworks([]);
+  toast('WLAN vergessen – der Dongle öffnet sein eigenes Netz siri-bridge-setup.');
+});
+
+// ---- WLAN ---------------------------------------------------------------------------------------
+const bars = rssi => '▂▄▆█'.slice(0, rssi >= -55 ? 4 : rssi >= -67 ? 3 : rssi >= -78 ? 2 : 1);
+function fillNetworks(nets) {
+  const sel = $('netsel'), keep = sel.value || savedSsid;
+  sel.innerHTML = '';
+  if (!nets.length && !savedSsid) sel.add(new Option('– bitte suchen –', ''));
+  if (savedSsid && !nets.some(n => n.ssid === savedSsid)) sel.add(new Option(savedSsid + ' (gespeichert)', savedSsid));
+  for (const n of nets) sel.add(new Option(`${n.ssid}   ${bars(n.rssi)} ${n.rssi} dBm${n.open ? ' · offen' : ''}${n.ssid === savedSsid ? ' · gespeichert' : ''}`, n.ssid));
+  sel.add(new Option('Anderes Netzwerk (Name eingeben) …', OTHER));
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : sel.options[0].value;
+  pickNetwork();
+}
+function pickNetwork() {
+  const v = $('netsel').value;
+  $('ssidrow').hidden = v !== OTHER;
+  if (v !== OTHER) $('wifiform').ssid.value = v;
+}
+$('netsel').onchange = () => { pickNetwork(); const f = $('wifiform'); ($('netsel').value === OTHER ? f.ssid : f.pass).focus(); };
+async function scan() {
+  $('scan').disabled = true; $('msg-scan').textContent = 'Suche läuft …';
+  try {
+    const nets = (await (await fetch('/api/scan')).json()).sort((a, b) => b.rssi - a.rssi);
+    fillNetworks(nets);
+    $('msg-scan').textContent = nets.length ? `${nets.length} gefunden, stärkstes zuerst` : 'keine gefunden';
+  } catch (err) { $('msg-scan').textContent = 'Suche fehlgeschlagen'; }
+  $('scan').disabled = false;
+}
+$('scan').onclick = scan;
+function hidePassword() { $('wifiform').pass.type = 'password'; $('eye').setAttribute('aria-pressed', false); $('eye').style.opacity = .6; }
+$('eye').onclick = () => {
+  const input = $('wifiform').pass, show = input.type === 'password';
+  input.type = show ? 'text' : 'password'; $('eye').setAttribute('aria-pressed', show); $('eye').style.opacity = show ? 1 : .6;
+};
+hidePassword();
+$('wifiform').onsubmit = async e => {
+  e.preventDefault(); const f = e.target; hidePassword();
+  if (!f.ssid.value) return toast('Bitte ein Netzwerk auswählen oder suchen.', true);
+  try { await post('/api/wifi', new URLSearchParams({ssid:f.ssid.value, pass:f.pass.value})); savedSsid = f.ssid.value; f.pass.value = ''; toast('Gespeichert – der Dongle wechselt jetzt ins WLAN.'); }
+  catch (err) { toast('Fehler: ' + err.message, true); }
+};
+
+// ---- Sicherung ----------------------------------------------------------------------------------
+$('export').onclick = () => {
+  if (!saved) return;
+  const data = JSON.stringify({type:'siri-bridge-config', version:1, firmware:$('fwver').textContent, saved:new Date().toISOString(), cfg:saved}, null, 2);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  a.download = `siri-bridge-config-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+};
+$('importbtn').onclick = () => $('import').click();
+$('import').onchange = async e => {
+  try {
+    const j = JSON.parse(await e.target.files[0].text()), c = j.cfg;
+    if (j.type !== 'siri-bridge-config' || !c || !Array.isArray(c.map) || c.map.length !== draft.map.length) throw new Error('falsches Format');
+    draft.map.forEach((a, i) => { a.t = +c.map[i].t || 0; a.m = +c.map[i].m || 0; a.c = +c.map[i].c || 0; });
+    for (const k of SETTINGS) if (k in c) draft[k] = +c[k] || 0;
+    renderConfig(); toast('Sicherung geladen – mit „Speichern“ übernehmen.');
+  } catch (err) { toast('Das ist keine gültige Sicherung.', true); }
+  e.target.value = '';
+};
+
+// ---- Firmware-Update ----------------------------------------------------------------------------
+$('fwgo').onclick = () => {
+  const file = $('fw').files[0];
+  if (!file) return toast('Bitte zuerst eine Datei wählen.', true);
+  if (/merged/.test(file.name)) return toast('Das ist das Komplett-Image. Für das Update die …-ota.bin wählen.', true);
+  const xhr = new XMLHttpRequest(), data = new FormData(); data.append('firmware', file);
+  $('fwprog').hidden = false; $('fwgo').disabled = true;
+  xhr.upload.onprogress = e => { if (e.lengthComputable) $('fwprog').value = e.loaded / e.total * 100; };
+  const done = () => { $('fwgo').disabled = false; $('fwprog').hidden = true; };
+  xhr.onload = () => { done(); xhr.status === 200 ? toast('Update eingespielt – der Dongle startet neu.') : toast('Update fehlgeschlagen: ' + xhr.responseText, true); };
+  xhr.onerror = () => { done(); toast('Verbindung abgebrochen.', true); };
+  xhr.open('POST', '/api/ota'); xhr.send(data);
+};
+
+showTab(location.hash.slice(1)); refresh(); setInterval(refresh, 2000);
+</script>
+</body>
+</html>

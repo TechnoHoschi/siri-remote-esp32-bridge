@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+firmware/build/
+firmware/dist/
+# wird von firmware/build.sh aus web/index.html erzeugt
+firmware/siri_bridge/web_ui.h
+# Mitschnitte enthalten Bonding-Schlüssel
+captures/*.btsnoop
+# persönliche Notizen zur eigenen Entwicklungsumgebung
+CLAUDE.local.md
