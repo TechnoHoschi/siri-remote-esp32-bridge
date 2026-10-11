@@ -248,6 +248,8 @@
           <div class="edrow" id="ed-modrow"><span>Zusatztasten</span>
             <div class="chips" id="ed-mods"><button type="button" data-m="1">Strg</button><button type="button" data-m="2">Umschalt</button><button type="button" data-m="4">Alt</button></div></div>
           <div class="edrow" id="ed-consrow"><span>Funktion</span><select id="ed-cons"></select></div>
+          <p class="hint" id="ed-ir" hidden>Lauter, Leiser und Mute sendet die Remote zusätzlich selbst per Infrarot – mit den Codes, die sie einmal an einem Apple TV für deinen Fernseher gelernt hat.
+            Reagiert dein Fernseher darauf, regeln Fernseher und Mediaplayer gemeinsam; dann diese Taste hier auf „Nichts“ stellen. Verlassen kann man sich auf das Infrarot nicht: Mal bleibt es nach dem Koppeln erhalten, mal nicht.</p>
         </div>
         <div class="all" id="all"></div>
         <div class="savebar" data-keys="active,profiles"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
@@ -517,6 +519,7 @@ function renderEditor() {
   $('ed-name').textContent = NAMES[a.n] || a.n; $('ed-now').textContent = 'sendet: ' + label(a);
   all('#ed-type button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.t === a.t));
   $('ed-keyrow').hidden = $('ed-modrow').hidden = a.t !== 1; $('ed-consrow').hidden = a.t !== 2;
+  $('ed-ir').hidden = !['Vol+', 'Vol-', 'Mute'].includes(a.n);
   if (a.t === 1) $('ed-key').value = a.c; if (a.t === 2) $('ed-cons').value = a.c;
   all('#ed-mods button').forEach(b => b.setAttribute('aria-pressed', !!(a.m & +b.dataset.m)));
 }

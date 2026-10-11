@@ -108,7 +108,14 @@ Das vierte Profil, „Eigenes Profil“, ist eine Kopie von „Universal“ zum 
 
 „Universal“ ist bei einer Fernbedienung abgeschaut, die über einen Flirc-Dongle an Fire TV und CoreELEC
 gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Wer selbst so ein bewährtes Gespann hat,
-kann mit `tools/key_scan.py` nachsehen, was es sendet. „Android / Fire TV“ ist bisher ungetestet.
+kann mit `tools/key_scan.py` nachsehen, was es sendet. „Universal“ ist an einer CoreELEC-Box und einem
+Fire TV erprobt; „Android / Fire TV“ ist bisher ungetestet.
+
+**Zur Lautstärke, mit Vorsicht:** Lauter, Leiser und Mute sendet die Remote zusätzlich selbst per
+Infrarot, mit den Codes, die sie einmal an einem Apple TV für den Fernseher gelernt hat. Bei uns hat das
+nach dem Koppeln mit dem Dongle meistens weiter funktioniert, zwischendurch aber auch einmal nicht – warum,
+wissen wir nicht. Reagiert der Fernseher mit, regeln er und der Mediaplayer gemeinsam; wen das stört, der
+stellt die drei Tasten im Profil auf „Nichts“.
 
 ## Die Weboberfläche
 

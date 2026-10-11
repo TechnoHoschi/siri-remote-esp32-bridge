@@ -107,9 +107,10 @@ release only about 15 ms apart. A bridge has to decide whether to drop them.
 - `0x2A1A` in the same service is a power state. Other projects list `0xAB` charging, `0xAF`
   discharging, `0xBB` plugged in; on battery we read `0x6F`. ⚠️
 - The device name is the remote's serial number.
-- Infrared: we do not know how an Apple TV tells the remote which TV to control over IR, or how long the
-  remote keeps that setup. After pairing with the dongle, IR volume control of the TV did not reliably
-  keep working; do not count on it.
+- Infrared: the remote sends volume up/down and mute over IR by itself, with codes it learned for the TV
+  while paired to an Apple TV. After pairing with the dongle this kept working on an LG TV most of the
+  time, but was seen not working once in between. We do not know how the Apple TV configures it or what
+  makes the remote keep or drop it.
 
 ## BlueZ specifics
 

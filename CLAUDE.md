@@ -84,14 +84,16 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 ## To-do (Reihenfolge des Projektinhabers)
 
 1. Touchpad: Format des Reports `0xFC` entschlüsseln, Wischen als Pfeiltasten. Das Timing muss stimmen.
-2. Profile an Fire TV Cube und CoreELEC-Box prüfen, „Android / Fire TV“ nachschärfen.
+2. „Android / Fire TV“-Profil testen und nachschärfen. („Universal“ ist vom Projektinhaber am 2026-10-11 an
+   CoreELEC-Box und Fire TV bestätigt: funktioniert einwandfrei.)
 3. Langer Tastendruck als zweite Belegung.
 4. Sprache der Weboberfläche umschaltbar (Deutsch/Englisch).
 5. Erstflash im Browser testen: mit esptool-js und dem merged-Image, nach dem Veröffentlichen auch den
    Ein-Klick-Installer (GitHub Pages). Vom Projektinhaber am 2026-10-11 zurückgestellt.
 6. Handy-Ansicht der Weboberfläche gezielt durchsehen.
 7. Infrarot senden als dritte Belegungsart neben Tastatur und Multimedia (z. B. TV-Lautstärke), braucht
-   eine IR-Sendediode am Dongle mit Sicht zum Fernseher. Hintergrund: Die am Apple TV eingerichtete
-   IR-Lautstärke der Remote bleibt nach dem Koppeln mit dem Dongle nicht verlässlich erhalten.
+   eine IR-Sendediode am Dongle mit Sicht zum Fernseher. Hintergrund: Die Remote sendet Lautstärke und Mute
+   selbst per IR (am Apple TV gelernt); das blieb nach dem Koppeln mit dem Dongle meist erhalten, einmal aber
+   nicht. In README und Weboberfläche deshalb nur ein vorsichtiger Hinweis, keine Zusage.
 8. Infrarot empfangen: den Dongle zusätzlich als „besseren Flirc“ nutzen (IR-Fernbedienung → USB-Tastatur,
    über dieselben Profile). Idee des Projektinhabers, zurückgestellt.

@@ -109,7 +109,14 @@ The fourth profile, "Eigenes Profil" (custom), starts as a copy of "Universal" f
 
 "Universal" was copied from a remote that works on both Fire TV and CoreELEC through a Flirc dongle: the
 keyboard's Menu key and the media "Back" key. If you have such a proven pair yourself, `tools/key_scan.py`
-shows what it sends. "Android / Fire TV" is untested so far.
+shows what it sends. "Universal" has been tried on a CoreELEC box and a Fire TV; "Android / Fire TV" is
+untested so far.
+
+**About volume, with caution:** the remote also sends volume up, down and mute over infrared by itself,
+using the codes it once learned for your TV on an Apple TV. For us this mostly kept working after pairing
+with the dongle, but at one point it did not, and we do not know why. If your TV reacts too, it and the
+media player both change volume; if that bothers you, set the three buttons to "Nichts" (nothing) in
+your profile.
 
 ## The web interface
 
