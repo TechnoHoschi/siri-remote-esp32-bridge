@@ -25,6 +25,7 @@ This dongle speaks that dialect and translates it into the one thing every devic
 
 - Pairs the remote by itself as soon as you hold it nearby in pairing mode
 - All 13 buttons as USB keyboard or media keys, freely assignable
+- Four mapping profiles to switch between and rename, three of them pre-filled
 - No noticeable delay; holding a button repeats (the media player takes care of that)
 - Web interface with live view of button presses, remote battery level, light and dark mode
 - Firmware updates through the web interface, with automatic rollback if the update was nonsense
@@ -88,18 +89,32 @@ relationship at a time.
 If a solid light behind the TV is too much of a light show, the settings let you turn the LED off
 while connected.
 
-### Default mapping
+### Mapping and profiles
 
-| Remote | sends | in Kodi |
-|---|---|---|
-| Ring up / right / down / left | Arrow keys | Navigation |
-| Clickpad centre | Enter | Select |
-| Back | Backspace | Back |
-| Play/Pause | Space | Play/Pause |
-| Home/TV | C | Context menu |
-| Power | S | Shutdown menu |
-| Volume up / down / Mute | Media keys | Volume |
-| Siri | nothing | – |
+The dongle ships with four profiles that you switch between in the web interface. Each can be remapped
+and renamed.
+
+| Remote | Universal (default) | Kodi (CoreELEC) | Android / Fire TV |
+|---|---|---|---|
+| Ring up / right / down / left | Arrow keys | Arrow keys | Arrow keys |
+| Clickpad centre | Enter | Enter | Enter |
+| Back | Media "Back" | Backspace | Media "Back" |
+| Home/TV | Menu key | C (context menu) | Media "Home" |
+| Play/Pause | Media "Play/Pause" | Space | Media "Play/Pause" |
+| Power | S (shutdown menu in Kodi) | S | nothing |
+| Volume up / down / Mute | Media keys | Media keys | Media keys |
+| Siri | nothing | nothing | nothing |
+
+The fourth profile, "Eigenes Profil" (custom), starts as a copy of "Universal" for tinkering.
+
+"Universal" was copied from a remote that works on both Fire TV and CoreELEC through a Flirc dongle: the
+keyboard's Menu key and the media "Back" key. If you have such a proven pair yourself, `tools/key_scan.py`
+shows what it sends. "Android / Fire TV" is untested so far.
+
+**A tip on volume:** if the remote was ever paired with an Apple TV and set up there to control your TV's
+volume, it remembers that. Volume up and down keep controlling the TV over infrared, even with the remote
+long since paired to the dongle. If that is all you need, set the three volume buttons to "nothing" in
+your profile; otherwise TV and media player both react.
 
 ## The web interface
 
@@ -176,6 +191,7 @@ browser installer.
 | `firmware/siri_bridge/web/index.html` | The web interface, one single file |
 | `tools/ui_dev.py` | Development server for the web interface |
 | `tools/serial_log.py`, `tools/hid_watch.py` | Read the ESP's serial log and its USB key presses on Linux |
+| `tools/key_scan.py` | Shows what another USB input device sends, a Flirc for example |
 | `tools/esp_rescue.py` | Gets an ESP out of a boot loop |
 | `tools/linux/` | Read the remote directly on a Linux machine (from the exploration phase; needs BlueZ and `bleak`) |
 | `docs/PROTOCOL.md` | What we found out about the remote's protocol |
@@ -199,8 +215,7 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wish list
 
 - [ ] **Touchpad:** swipes as arrow keys, like on an Apple TV
-- [ ] **Profiles:** switchable mappings, for example "CoreELEC" and "Fire TV"
-- [ ] Test the **Fire TV Cube** and ship a matching profile
+- [ ] Test the **Fire TV Cube** and other Android devices, then refine the profiles
 - [ ] **Long press** as a second mapping
 - [ ] **Switchable language** for the web interface
 - [ ] Properly test the mobile view of the web interface

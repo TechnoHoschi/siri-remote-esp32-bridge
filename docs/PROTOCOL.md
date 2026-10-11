@@ -107,6 +107,8 @@ release only about 15 ms apart. A bridge has to decide whether to drop them.
 - `0x2A1A` in the same service is a power state. Other projects list `0xAB` charging, `0xAF`
   discharging, `0xBB` plugged in; on battery we read `0x6F`. ⚠️
 - The device name is the remote's serial number.
+- Infrared: the remote keeps the TV volume setup it learned from an Apple TV. After re-pairing with
+  another host, volume up/down still control the TV over IR (reported by the remote's owner with an LG TV).
 
 ## BlueZ specifics
 

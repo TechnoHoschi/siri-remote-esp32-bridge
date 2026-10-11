@@ -23,6 +23,7 @@ Der Dongle spricht diesen Dialekt und übersetzt ihn in das Einzige, was wirklic
 
 - Koppelt die Remote von selbst, sobald man sie im Pairing-Modus danebenhält
 - Alle 13 Tasten als USB-Tastatur oder Multimedia-Taste, frei belegbar
+- Vier Belegungsprofile zum Umschalten und Umbenennen, drei davon vorbelegt
 - Reaktion ohne spürbare Verzögerung, Gedrückthalten wiederholt (das erledigt der Mediaplayer)
 - Weboberfläche mit Live-Anzeige der Tastendrücke, Akkustand der Remote, hell und dunkel
 - Firmware-Update über die Weboberfläche, mit automatischem Rückfall, falls das Update Unsinn war
@@ -87,18 +88,32 @@ Beziehung gleichzeitig führen.
 Wem Dauerlicht hinter dem Fernseher zu viel Lightshow ist: In den Einstellungen lässt sich die LED im
 verbundenen Zustand ausschalten.
 
-### Standardbelegung
+### Belegung und Profile
 
-| Remote | sendet | in Kodi |
-|---|---|---|
-| Ring oben / rechts / unten / links | Pfeiltasten | Navigation |
-| Clickpad-Mitte | Enter | Auswählen |
-| Zurück | Backspace | Zurück |
-| Play/Pause | Leertaste | Play/Pause |
-| Home/TV | C | Kontextmenü |
-| Power | S | Shutdown-Menü |
-| Lauter / Leiser / Mute | Multimedia-Tasten | Lautstärke |
-| Siri | nichts | – |
+Der Dongle bringt vier Profile mit, zwischen denen man in der Weboberfläche umschaltet. Jedes lässt sich
+umbelegen und umbenennen.
+
+| Remote | Universal (Standard) | Kodi (CoreELEC) | Android / Fire TV |
+|---|---|---|---|
+| Ring oben / rechts / unten / links | Pfeiltasten | Pfeiltasten | Pfeiltasten |
+| Clickpad-Mitte | Enter | Enter | Enter |
+| Zurück | Multimedia „Zurück“ | Backspace | Multimedia „Zurück“ |
+| Home/TV | Menütaste | C (Kontextmenü) | Multimedia „Home“ |
+| Play/Pause | Multimedia „Play/Pause“ | Leertaste | Multimedia „Play/Pause“ |
+| Power | S (Shutdown-Menü in Kodi) | S | nichts |
+| Lauter / Leiser / Mute | Multimedia-Tasten | Multimedia-Tasten | Multimedia-Tasten |
+| Siri | nichts | nichts | nichts |
+
+Das vierte Profil, „Eigenes Profil“, ist eine Kopie von „Universal“ zum Verbasteln.
+
+„Universal“ ist bei einer Fernbedienung abgeschaut, die über einen Flirc-Dongle an Fire TV und CoreELEC
+gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Wer selbst so ein bewährtes Gespann hat,
+kann mit `tools/key_scan.py` nachsehen, was es sendet. „Android / Fire TV“ ist bisher ungetestet.
+
+**Tipp zur Lautstärke:** Hat man die Remote einmal mit einem Apple TV gekoppelt und dort die Lautstärke des
+Fernsehers eingerichtet, merkt sie sich das. Lauter und Leiser steuern den Fernseher dann weiterhin per
+Infrarot, auch wenn die Remote längst am Dongle hängt. Wem das reicht, der stellt die drei
+Lautstärketasten im Profil auf „nichts“; sonst regeln Fernseher und Mediaplayer gemeinsam.
 
 ## Die Weboberfläche
 
@@ -178,6 +193,7 @@ Browser-Installer.
 | `firmware/siri_bridge/web/index.html` | Die Weboberfläche, eine einzige Datei |
 | `tools/ui_dev.py` | Entwicklungsserver für die Weboberfläche |
 | `tools/serial_log.py`, `tools/hid_watch.py` | Serial-Log des ESP und seine USB-Tastendrücke unter Linux mitlesen |
+| `tools/key_scan.py` | Zeigt, was ein anderes USB-Eingabegerät sendet, etwa ein Flirc |
 | `tools/esp_rescue.py` | Holt einen ESP aus der Boot-Schleife |
 | `tools/linux/` | Die Remote direkt an einem Linux-Rechner mitlesen (aus der Erkundungsphase, braucht BlueZ und `bleak`) |
 | `docs/PROTOCOL.md` | Was wir über das Protokoll der Remote herausgefunden haben (englisch) |
@@ -199,8 +215,7 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wunschliste
 
 - [ ] **Touchpad:** Wischen als Pfeiltasten, wie am Apple TV
-- [ ] **Profile:** umschaltbare Belegungen, zum Beispiel „CoreELEC“ und „Fire TV“
-- [ ] **Fire TV Cube** testen und ein passendes Profil mitliefern
+- [ ] **Fire TV Cube** und andere Android-Geräte testen, die Profile danach nachschärfen
 - [ ] **Langer Tastendruck** als zweite Belegung
 - [ ] **Sprache der Weboberfläche umschaltbar**
 - [ ] Handy-Ansicht der Weboberfläche ordentlich durchtesten

@@ -21,15 +21,27 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 INDEX = pathlib.Path(__file__).resolve().parent.parent / "firmware/siri_bridge/web/index.html"
 BUTTONS = ["Home/TV", "Vol+", "Vol-", "Click", "Power", "Siri", "Back", "Mute", "Play/Pause", "Up", "Right", "Down", "Left"]
-DEFAULT_MAP = [(1, 0x06), (2, 0xE9), (2, 0xEA), (1, 0x28), (1, 0x16), (0, 0), (1, 0x2A), (2, 0xE2), (1, 0x2C),
-               (1, 0x52), (1, 0x4F), (1, 0x51), (1, 0x50)]
+# Die mitgelieferten Profile, wie in firmware/siri_bridge/config.h (builtinProfile)
+ARROWS = [(1, 0x52), (1, 0x4F), (1, 0x51), (1, 0x50)]
+VOL_UP, VOL_DOWN, MUTE, NONE, ENTER, KEY_S = (2, 0xE9), (2, 0xEA), (2, 0xE2), (0, 0), (1, 0x28), (1, 0x16)
+BUILTIN = [
+    ("Universal", [(1, 0x65), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Kodi (CoreELEC)", [(1, 0x06), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (1, 0x2A), MUTE, (1, 0x2C)] + ARROWS),
+    ("Android / Fire TV", [(2, 0x223), VOL_UP, VOL_DOWN, ENTER, NONE, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Eigenes Profil", [(1, 0x65), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+]
+
+
+def builtin_profiles() -> list:
+    return [{"name": name, "map": [{"n": n, "t": t, "m": 0, "c": c} for n, (t, c) in zip(BUTTONS, actions)]}
+            for name, actions in BUILTIN]
 SCENARIOS = {"connected": "verbunden", "searching": "wartet auf Tastendruck", "pairing": "nicht gekoppelt", "ap": "Hotspot"}
 NETWORKS = [("Heimnetz-IoT", -48, False), ("Heimnetz", -52, False), ("FRITZ!Box 7590 KL", -63, False),
             ("Vodafone-A1B2", -71, False), ("Gastzugang", -74, True), ("WLAN-482913", -80, False), ("o2-WLAN67", -86, False)]
 
 
 def default_config() -> dict:
-    return {"map": [{"n": n, "t": t, "m": 0, "c": c} for n, (t, c) in zip(BUTTONS, DEFAULT_MAP)],
+    return {"active": 0, "profiles": builtin_profiles(),
             "ledType": 1, "ledPin": 48, "ledInv": 0, "ledBri": 24, "ledDark": 0, "itv": 12, "stale": 0, "mins": 0, "siri": 1}
 
 
@@ -69,9 +81,14 @@ class Mock:
 
     def post(self, path: str, form: dict) -> tuple[int, str]:
         if path == "/api/config":
-            for i, entry in enumerate(self.cfg["map"]):
-                if f"m{i}" in form:
-                    entry["t"], entry["m"], entry["c"] = (int(x) for x in form[f"m{i}"].split(","))
+            for i, profile in enumerate(self.cfg["profiles"]):
+                if f"n{i}" in form:
+                    profile["name"] = form[f"n{i}"][:23]
+                if f"p{i}" in form:
+                    for entry, item in zip(profile["map"], form[f"p{i}"].split(";")):
+                        entry["t"], entry["m"], entry["c"] = (int(x) for x in item.split(","))
+            if "active" in form:
+                self.cfg["active"] = int(form["active"])
             for web, key in (("ledType", "ledType"), ("ledPin", "ledPin"), ("ledBri", "ledBri"), ("ledInv", "ledInv"),
                              ("ledDark", "ledDark"), ("itv", "itv"), ("stale", "stale"), ("mins", "mins"), ("siri", "siri")):
                 if web in form:
@@ -171,6 +188,8 @@ class Handler(BaseHTTPRequestHandler):
             self.proxy(None)
         elif url.path == "/api/state":
             self.reply(200, json.dumps(self.mock.state()), "application/json")
+        elif url.path == "/api/builtin":
+            self.reply(200, json.dumps(builtin_profiles()), "application/json")
         elif url.path == "/api/live":
             self.reply(200, json.dumps(self.mock.live()), "application/json")
         elif url.path == "/api/scan":

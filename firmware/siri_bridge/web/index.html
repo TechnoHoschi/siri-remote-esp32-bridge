@@ -122,6 +122,8 @@
   .siri:hover:not(:disabled) { background:#fff; }
   .siri-label { position:absolute; top:94px; right:-38px; font-size:11px; color:var(--muted); pointer-events:none; }
 
+  .profile { margin:-2px 0 16px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .profile select, .profile input { width:230px; }
   .editor h3 { margin:0; font-size:19px; } .editor .now { color:var(--muted); margin:2px 0 14px; }
   .segctl { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
   .segctl button { border:0; border-radius:0; background:none; padding:7px 15px; }
@@ -191,6 +193,7 @@
             <dt>Verbindung</dt><dd id="link">–</dd>
             <dt>Signal</dt><dd id="rssi">–</dd>
             <dt>Akku</dt><dd id="batt">–</dd>
+            <dt>Profil</dt><dd id="profile-view">–</dd>
             <dt>Letzte Taste</dt><dd id="key">–</dd>
             <dt>Sie sendet</dt><dd id="keysends">–</dd>
           </dl>
@@ -230,6 +233,11 @@
     <div class="keys">
       <div class="card remote-wrap"><div class="remote"></div></div>
       <div class="card editor">
+        <div class="profile">
+          <div class="field"><span>Profil<small id="prof-note"></small></span><select id="profile"></select></div>
+          <div class="field"><span>Name des Profils</span>
+            <span class="pick"><input type="text" id="profname" maxlength="23" autocomplete="off"><button type="button" id="profreset">Vorgabe laden</button></span></div>
+        </div>
         <h3 id="ed-name">&nbsp;</h3>
         <div class="now" id="ed-now">&nbsp;</div>
         <div id="ed-body" hidden>
@@ -242,7 +250,8 @@
           <div class="edrow" id="ed-consrow"><span>Funktion</span><select id="ed-cons"></select></div>
         </div>
         <div class="all" id="all"></div>
-        <div class="savebar" data-keys="map"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
+        <div class="savebar" data-keys="active,profiles"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
+        <p class="hint">Vier Profile lassen sich getrennt belegen und benennen. Das hier gewählte wird mit „Speichern“ auf dem Dongle aktiv; „Vorgabe laden“ setzt nur dieses eine Profil auf seine mitgelieferte Belegung zurück.</p>
         <p class="hint"><label class="check"><input type="checkbox" id="follow"> Beim Drücken einer Taste auf der Remote automatisch zu ihr springen</label></p>
         <p class="hint">Gedrückte Tasten leuchten links live auf. Gesendet werden USB-Tastencodes (US-Layout); gedrückt halten wiederholt die Taste – das erledigt das angeschlossene Gerät.</p>
       </div>
@@ -415,10 +424,12 @@ window.onhashchange = () => showTab(location.hash.slice(1));
 
 // ---- Einstellungen: Entwurf, Speichern ----------------------------------------------------------
 const SETTINGS = ['ledType','ledPin','ledBri','ledInv','ledDark','itv','stale','mins','siri'];
-const dirty = () => differs(['map']) || differs(SETTINGS);
+const PROFILE_KEYS = ['active', 'profiles'];
+const cur = () => draft.profiles[draft.active];
+const dirty = () => differs(PROFILE_KEYS) || differs(SETTINGS);
 const differs = keys => saved && keys.some(k => JSON.stringify(saved[k]) !== JSON.stringify(draft[k]));
 function syncDirty() {
-  document.querySelector('[data-tab=tasten]').classList.toggle('dirty', differs(['map']));
+  document.querySelector('[data-tab=tasten]').classList.toggle('dirty', differs(PROFILE_KEYS));
   document.querySelector('[data-tab=einst]').classList.toggle('dirty', differs(SETTINGS));
   all('.savebar').forEach(bar => {
     const changed = differs(bar.dataset.keys.split(','));
@@ -428,7 +439,7 @@ function syncDirty() {
 }
 function loadConfig(c) { saved = c; draft = JSON.parse(JSON.stringify(c)); renderConfig(); }
 function renderConfig() {
-  renderKeys(); renderEditor();
+  renderProfile(); renderKeys(); renderEditor();
   $('ledType').value = draft.ledType; $('ledPin').value = draft.ledPin; $('ledBri').value = draft.ledBri; $('ledInv').checked = !!draft.ledInv; $('ledDark').checked = !!draft.ledDark;
   $('itv').value = draft.itv; $('stale').value = draft.stale; $('siri').checked = !!draft.siri;
   if (![...$('mins').options].some(o => +o.value === draft.mins)) $('mins').add(new Option(`nach ${draft.mins} Minuten`, draft.mins));
@@ -447,10 +458,14 @@ const clone = v => JSON.parse(JSON.stringify(v));
 // Speichert nur die genannten Einstellungen (ohne Angabe: alle). Alles andere geht so an den Dongle, wie es
 // dort schon steht – ungespeicherte Änderungen in anderen Abschnitten bleiben als Entwurf erhalten.
 async function saveConfig(keys) {
-  keys = keys || ['map', ...SETTINGS];
+  keys = keys || [...PROFILE_KEYS, ...SETTINGS];
   const value = k => keys.includes(k) ? draft[k] : saved[k];
   const body = new URLSearchParams();
-  value('map').forEach((a, i) => body.set('m' + i, `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`));
+  body.set('active', value('active'));
+  value('profiles').forEach((p, i) => {  // je Profil ein Feld: der Webserver des Dongles nimmt nur wenige Formularfelder an
+    body.set('n' + i, p.name.trim() || `Profil ${i + 1}`);
+    body.set('p' + i, p.map.map(a => `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`).join(';'));
+  });
   for (const k of SETTINGS) body.set(k, value(k));
   try { await post('/api/config', body); } catch (err) { toast('Fehler: ' + err.message, true); return false; }
   for (const k of keys) saved[k] = clone(draft[k]);
@@ -463,22 +478,40 @@ all('.savebar').forEach(bar => {
   bar.querySelector('.discard').onclick = () => { for (const k of keys) draft[k] = clone(saved[k]); renderConfig(); };
 });
 
+// ---- Profile ------------------------------------------------------------------------------------
+let builtin = null;
+function renderProfile() {
+  const sel = $('profile');
+  sel.innerHTML = '';
+  draft.profiles.forEach((p, i) => sel.add(new Option((p.name.trim() || `Profil ${i + 1}`) + (i === saved.active ? '  ● aktiv' : ''), i)));
+  sel.value = draft.active;
+  if (document.activeElement !== $('profname')) $('profname').value = cur().name;
+  $('prof-note').textContent = draft.active === saved.active ? 'auf dem Dongle aktiv' : 'wird mit „Speichern“ aktiv';
+}
+$('profile').onchange = () => { draft.active = +$('profile').value; renderConfig(); };
+$('profname').oninput = () => { cur().name = $('profname').value; renderProfile(); syncDirty(); };
+$('profreset').onclick = async () => {
+  try { builtin = builtin || await (await fetch('/api/builtin')).json(); } catch (e) { return toast('Die Vorgaben konnten nicht geladen werden.', true); }
+  draft.profiles[draft.active] = clone(builtin[draft.active]); renderConfig();
+  toast(`Vorgabe „${cur().name}“ geladen – mit „Speichern“ übernehmen.`);
+};
+
 // ---- Tasten -------------------------------------------------------------------------------------
 function renderKeys() {
   all('.rk').forEach(b => {
-    const i = +b.dataset.i, a = draft.map[i];
+    const i = +b.dataset.i, a = cur().map[i];
     b.classList.toggle('sel', i === selected); b.classList.toggle('off', a.t === 0);
     b.title = `${NAMES[a.n] || a.n}: ${label(a)}`; b.setAttribute('aria-label', b.title);
   });
   $('all').innerHTML = '';
-  draft.map.forEach((a, i) => {
+  cur().map.forEach((a, i) => {
     const b = document.createElement('button'); b.type = 'button'; if (i === selected) b.className = 'sel';
     const n = document.createElement('span'); n.textContent = NAMES[a.n] || a.n; const v = document.createElement('span'); v.textContent = label(a);
     b.append(n, v); b.onclick = () => select(i); $('all').append(b);
   });
 }
 function renderEditor() {
-  const a = draft.map[selected];
+  const a = cur().map[selected];
   $('ed-body').hidden = !a;
   if (!a) return;
   $('ed-name').textContent = NAMES[a.n] || a.n; $('ed-now').textContent = 'sendet: ' + label(a);
@@ -488,7 +521,7 @@ function renderEditor() {
   all('#ed-mods button').forEach(b => b.setAttribute('aria-pressed', !!(a.m & +b.dataset.m)));
 }
 function select(i) { if (!draft || i === selected) return; selected = i; renderKeys(); renderEditor(); }
-function edit(change) { change(draft.map[selected]); renderKeys(); renderEditor(); syncDirty(); }
+function edit(change) { change(cur().map[selected]); renderKeys(); renderEditor(); syncDirty(); }
 $('ed-key').innerHTML = KEYS.map(([c, n]) => `<option value="${c}">${n}</option>`).join('');
 $('ed-cons').innerHTML = CONSUMER.map(([c, n]) => `<option value="${c}">${n}</option>`).join('');
 all('.remote').forEach(r => r.innerHTML = REMOTE);
@@ -537,7 +570,8 @@ async function refresh() {
   $('batt').style.color = low ? 'var(--bad)' : '';
   if (connected && low) $('subtitle').textContent = `Akku der Remote fast leer (${s.batt} %) – bitte laden.`;
   $('key').textContent = s.lastKey ? `${NAMES[s.lastKey] || s.lastKey} · vor ${dur(s.lastKeyAge)}` : '–';
-  const lastAction = s.lastKey && s.cfg.map.find(a => a.n === s.lastKey); $('keysends').textContent = lastAction ? label(lastAction) : '–';
+  const activeProfile = s.cfg.profiles[s.cfg.active]; $('profile-view').textContent = activeProfile.name;
+  const lastAction = s.lastKey && activeProfile.map.find(a => a.n === s.lastKey); $('keysends').textContent = lastAction ? label(lastAction) : '–';
   $('fwver').textContent = s.version; $('uptime').textContent = dur(s.uptime);
   $('wifi').textContent = s.wifiMode === 'ap' ? 'eigenes Netz ' + s.ssid : s.wifiMode === 'sta' ? s.ssid : 'verbindet …';
   $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 && s.wifiMode !== 'ap' ? 'dauerhaft an' : 'aus in ' + dur(s.setupLeft);
@@ -624,7 +658,7 @@ $('wifiform').onsubmit = async e => {
 // ---- Sicherung ----------------------------------------------------------------------------------
 $('export').onclick = () => {
   if (!saved) return;
-  const data = JSON.stringify({type:'siri-bridge-config', version:1, firmware:$('fwver').textContent, saved:new Date().toISOString(), cfg:saved}, null, 2);
+  const data = JSON.stringify({type:'siri-bridge-config', version:2, firmware:$('fwver').textContent, saved:new Date().toISOString(), cfg:saved}, null, 2);
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
   a.download = `siri-bridge-config-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
 };
@@ -638,8 +672,15 @@ $('importbtn').onclick = () => $('import').click();
 $('import').onchange = async e => {
   try {
     const j = JSON.parse(await e.target.files[0].text()), c = j.cfg;
-    if (j.type !== 'siri-bridge-config' || !c || !Array.isArray(c.map) || c.map.length !== draft.map.length) throw new Error('falsches Format');
-    draft.map.forEach((a, i) => { a.t = +c.map[i].t || 0; a.m = +c.map[i].m || 0; a.c = +c.map[i].c || 0; });
+    if (j.type !== 'siri-bridge-config' || !c) throw new Error('falsches Format');
+    const count = cur().map.length, copyMap = (to, from) => to.forEach((a, i) => { a.t = +from[i].t || 0; a.m = +from[i].m || 0; a.c = +from[i].c || 0; });
+    if (Array.isArray(c.profiles)) {  // Format ab v0.4: alle Profile
+      if (c.profiles.length !== draft.profiles.length || c.profiles.some(p => !Array.isArray(p.map) || p.map.length !== count)) throw new Error('falsches Format');
+      c.profiles.forEach((p, i) => { draft.profiles[i].name = String(p.name || '').slice(0, 23); copyMap(draft.profiles[i].map, p.map); });
+      draft.active = Math.min(Math.max(+c.active || 0, 0), draft.profiles.length - 1);
+    } else if (Array.isArray(c.map) && c.map.length === count) {  // altes Format: eine Belegung, kommt ins gewählte Profil
+      copyMap(cur().map, c.map);
+    } else throw new Error('falsches Format');
     for (const k of SETTINGS) if (k in c) draft[k] = +c[k] || 0;
     renderConfig();
     loadedName = e.target.files[0].name;

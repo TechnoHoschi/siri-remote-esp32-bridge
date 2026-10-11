@@ -366,7 +366,7 @@ static void applyMask(const ButtonEvent &ev) {
     uint16_t bit = 1 << i;
     if (!(changed & bit)) continue;
     bool down = ev.mask & bit;
-    sendAction(cfg.map[i], down);
+    sendAction(cfg.profiles[cfg.active].map[i], down);
     if (i == SIRI_INDEX) siriDownAt = down ? millis() : 0;
     if (down) {
       lastKey = i;
@@ -465,12 +465,24 @@ static void handleLive() {
 static void handleConfig() {
   touch();
   Config next = cfg;
-  for (uint8_t i = 0; i < BUTTON_COUNT; i++) {
-    String v = server.arg("m" + String(i));
-    int c1 = v.indexOf(','), c2 = v.indexOf(',', c1 + 1);
-    if (c1 < 0 || c2 < 0) continue;
-    next.map[i] = {(uint8_t)v.substring(0, c1).toInt(), (uint8_t)v.substring(c1 + 1, c2).toInt(), (uint16_t)v.substring(c2 + 1).toInt()};
+  // Profile: n<i> = Name, p<i> = 13 Aktionen als "typ,mods,code;…". Je Profil ein Feld, weil der Webserver
+  // nur eine begrenzte Zahl von Formularfeldern annimmt.
+  for (uint8_t i = 0; i < PROFILE_COUNT; i++) {
+    if (server.hasArg("n" + String(i))) setProfileName(next.profiles[i], server.arg("n" + String(i)));
+    String list = server.arg("p" + String(i));
+    int pos = 0;
+    for (uint8_t k = 0; k < BUTTON_COUNT && pos < (int)list.length(); k++) {
+      int end = list.indexOf(';', pos);
+      if (end < 0) end = list.length();
+      String v = list.substring(pos, end);
+      int c1 = v.indexOf(','), c2 = v.indexOf(',', c1 + 1);
+      if (c1 > 0 && c2 > c1) {
+        next.profiles[i].map[k] = {(uint8_t)v.substring(0, c1).toInt(), (uint8_t)v.substring(c1 + 1, c2).toInt(), (uint16_t)v.substring(c2 + 1).toInt()};
+      }
+      pos = end + 1;
+    }
   }
+  if (server.hasArg("active")) next.active = server.arg("active").toInt();
   if (server.hasArg("ledType")) next.ledType = server.arg("ledType").toInt();
   if (server.hasArg("ledPin")) next.ledPin = constrain(server.arg("ledPin").toInt(), 0, 255);
   if (server.hasArg("ledBri")) next.ledBrightness = constrain(server.arg("ledBri").toInt(), 1, 255);
@@ -660,6 +672,7 @@ static void setupRoutes() {
   server.on("/", HTTP_GET, []() { touch(); server.send_P(200, "text/html; charset=utf-8", INDEX_HTML); });
   server.on("/api/state", HTTP_GET, handleState);
   server.on("/api/live", HTTP_GET, handleLive);
+  server.on("/api/builtin", HTTP_GET, []() { touch(); server.send(200, "application/json", builtinJson()); });
   server.on("/api/factory-reset", HTTP_POST, []() { server.send(200, "text/plain", "ok"); factoryResetRequested = true; });
   server.on("/api/config", HTTP_POST, handleConfig);
   server.on("/api/defaults", HTTP_POST, handleDefaults);

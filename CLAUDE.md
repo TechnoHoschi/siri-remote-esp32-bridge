@@ -40,7 +40,8 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
 ## HTTP-API der Firmware (solange das WLAN an ist)
 
 `GET /api/state` (Zustand + Einstellungen), `GET /api/live` (gedrückte Tasten, wird alle 150 ms
-abgefragt), `GET /api/scan` (WLANs), `POST /api/config`, `/api/defaults`, `/api/wifi` (leere SSID =
+abgefragt), `GET /api/scan` (WLANs), `GET /api/builtin` (mitgelieferte Profile), `POST /api/config` (`active`, je Profil `n<i>` = Name und
+`p<i>` = 13 Aktionen als `typ,mods,code;…` – der Webserver nimmt höchstens 32 Formularfelder an), `/api/defaults`, `/api/wifi` (leere SSID =
 vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns` für eine feste Adresse), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`, `/api/ota`.
 Ändert sich die API, auch den Beispieldaten-Server in `tools/ui_dev.py` nachziehen.
 
@@ -58,6 +59,13 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
   anderen Karten bleiben erhalten. Rückmeldungen (Sicherung, Firmware-Update) stehen in der Karte selbst,
   nicht nur als Einblendung.
 - Die Belegung wird als HID-Usage gespeichert, nicht als Zeichen.
+- **Vier Belegungsprofile** (`config.h`, `builtinProfile()`): „Universal“ (Standard), „Kodi (CoreELEC)“,
+  „Android / Fire TV“ (ungetestet), „Eigenes Profil“. „Universal“ übernimmt Menü (Tastatur `0x65`) und
+  Zurück (Consumer `0x224`) von einem Flirc-Dongle des Projektinhabers, der an Fire TV und CoreELEC
+  funktioniert (am 2026-10-11 mit `tools/key_scan.py` ausgelesen). Die Vorgaben stehen doppelt: in der
+  Firmware und in `tools/ui_dev.py` – beide zusammen ändern.
+- Ein Wechsel des Einstellungsformats (`CONFIG_VERSION`) setzt die Einstellungen auf Vorgabe zurück;
+  Kopplung und WLAN bleiben.
 
 ## Stolperfallen
 
@@ -76,10 +84,9 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 ## To-do (Reihenfolge des Projektinhabers)
 
 1. Touchpad: Format des Reports `0xFC` entschlüsseln, Wischen als Pfeiltasten. Das Timing muss stimmen.
-2. Profile per Dropdown (z. B. „CoreELEC“, „Fire TV“); Fire TV Cube testen.
+2. Profile an Fire TV Cube und CoreELEC-Box prüfen, „Android / Fire TV“ nachschärfen.
 3. Langer Tastendruck als zweite Belegung.
 4. Sprache der Weboberfläche umschaltbar (Deutsch/Englisch).
 5. Erstflash im Browser testen: mit esptool-js und dem merged-Image, nach dem Veröffentlichen auch den
    Ein-Klick-Installer (GitHub Pages). Vom Projektinhaber am 2026-10-11 zurückgestellt.
-6. Standardbelegung universeller machen (CoreELEC, Android, Fire TV) – der Projektinhaber hat dazu etwas vorbereitet.
-7. Handy-Ansicht der Weboberfläche gezielt durchsehen.
+6. Handy-Ansicht der Weboberfläche gezielt durchsehen.
