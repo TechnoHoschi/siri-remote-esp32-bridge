@@ -8,3 +8,5 @@ firmware/siri_bridge/web_ui.h
 captures/*.btsnoop
 # persönliche Notizen zur eigenen Entwicklungsumgebung
 CLAUDE.local.md
+# lokales Archiv aus dem Vorgänger-Repo (Mitschnitte mit Schlüsseln, alte Notizen)
+archiv/
