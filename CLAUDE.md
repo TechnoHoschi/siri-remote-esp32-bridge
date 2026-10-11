@@ -97,3 +97,9 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
    nicht. In README und Weboberfläche deshalb nur ein vorsichtiger Hinweis, keine Zusage.
 8. Infrarot empfangen: den Dongle zusätzlich als „besseren Flirc“ nutzen (IR-Fernbedienung → USB-Tastatur,
    über dieselben Profile). Idee des Projektinhabers, zurückgestellt.
+9. Weitere Boards unterstützen. Wunsch des Projektinhabers: möglichst kompakter Stick mit USB-A, später mit
+   Display und IR-Sender. Kandidaten (2026-10-11 recherchiert, nichts davon getestet): LilyGO T-Dongle-S3
+   (0,96″-Display ST7735, APA102-LED, BOOT-Taste) und T-Dongle-S3 Plus (zusätzlich IR-Sender), M5Stack
+   AtomS3U (WS2812 an GPIO35, Taste GPIO41, IR-Sender GPIO12, kein Display), Waveshare ESP32-S3-GEEK
+   (1,14″-Display). Nötig dafür: Taster-Pin einstellbar (bisher GPIO0 fest), LED-Art APA102, Display-Treiber
+   mit Statusanzeige (Zustand, Akku, Profil, IP), je Board eine Build-Variante samt Installer-Eintrag.
