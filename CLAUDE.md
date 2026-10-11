@@ -37,7 +37,7 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
   englisch. Die README hat bewusst einen humorvollen Ton. Screenshots in `docs/` stammen aus `ui_dev.py`
   mit erfundenen Adressen.
 
-## HTTP-API der Firmware (nur im Setup-Modus)
+## HTTP-API der Firmware (solange das WLAN an ist)
 
 `GET /api/state` (Zustand + Einstellungen), `GET /api/live` (gedrückte Tasten, wird alle 150 ms
 abgefragt), `GET /api/scan` (WLANs), `POST /api/config`, `/api/defaults`, `/api/wifi` (leere SSID =
@@ -46,7 +46,10 @@ vergessen), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`
 
 ## Entscheidungen, die bewusst so sind
 
-- **Kein Passwort** für Hotspot und Weboberfläche. Das WLAN ist nur im Setup-Modus an.
+- **Kein Passwort** für Hotspot und Weboberfläche.
+- **WLAN ab Werk dauerhaft an** (im Heimnetz); eine Abschaltzeit ist einstellbar, BOOT kurz oder Siri 5 s
+  schalten um. Der eigene offene Hotspot geht dagegen immer nach 10 min ohne Zugriff aus.
+- Die LED blinkt nur beim offenen Hotspot violett; im Heimnetz zeigt sie den Zustand der Remote.
 - **Lizenz MIT-0**, so offen wie möglich.
 - **Tastenwiederholung macht der Host**, nicht die Bridge.
 - Die Belegung wird als HID-Usage gespeichert, nicht als Zeichen.

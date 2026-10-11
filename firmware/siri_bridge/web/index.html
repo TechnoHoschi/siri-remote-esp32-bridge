@@ -213,7 +213,7 @@
             <div class="lamp fast"></div><div><b>Schnelles Blinken</b> – keine Remote gekoppelt</div>
             <div class="lamp flash"></div><div><b>Aufblitzen alle 2 Sekunden</b> – gekoppelt, Remote schläft</div>
             <div class="lamp"></div><div><b>Dauerlicht</b> – Remote verbunden<span id="dark-note"></span></div>
-            <div class="lamp slow"></div><div><b>Langsames Blinken<span class="rgb"> (violett)</span></b> – WLAN und diese Seite sind eingeschaltet</div>
+            <div class="lamp slow"></div><div><b>Langsames Blinken<span class="rgb"> (violett)</span></b> – eigener Hotspot offen, WLAN einrichten</div>
             <div class="lamp white"></div><div><b>Flackern<span class="rgb"> (weiß)</span></b> – Firmware-Update läuft</div>
           </div>
         </div>
@@ -283,9 +283,9 @@
       <div class="card">
         <h2>Erreichbarkeit dieser Seite</h2>
         <div class="field"><span>WLAN automatisch ausschalten<small>nach dieser Zeit ohne Zugriff auf die Seite</small></span>
-          <select id="mins"><option value="5">nach 5 Minuten</option><option value="10">nach 10 Minuten</option><option value="30">nach 30 Minuten</option><option value="60">nach 60 Minuten</option><option value="0">nie – dauerhaft an</option></select></div>
+          <select id="mins"><option value="5">nach 5 Minuten</option><option value="10">nach 10 Minuten</option><option value="30">nach 30 Minuten</option><option value="60">nach 60 Minuten</option><option value="0">nie – dauerhaft an (Standard)</option></select></div>
         <div class="field"><span>Per Fernbedienung einschalten</span><label class="check"><input type="checkbox" id="siri"> Siri 5 Sekunden halten</label></div>
-        <p class="hint">Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar – ohne Passwort, einschließlich Firmware-Update.</p>
+        <p class="hint">Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar – ohne Passwort, einschließlich Firmware-Update. Der eigene Hotspot des Dongles schaltet sich immer nach 10 Minuten ohne Zugriff ab.</p>
       </div>
     </div>
     <div class="savebar"><button class="primary save">Einstellungen speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
@@ -508,7 +508,7 @@ async function refresh() {
   const lastAction = s.lastKey && s.cfg.map.find(a => a.n === s.lastKey); $('keysends').textContent = lastAction ? label(lastAction) : '–';
   $('fwver').textContent = s.version; $('uptime').textContent = dur(s.uptime);
   $('wifi').textContent = s.wifiMode === 'ap' ? 'eigenes Netz ' + s.ssid : s.wifiMode === 'sta' ? s.ssid : 'verbindet …';
-  $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 ? 'dauerhaft an' : 'aus in ' + dur(s.setupLeft);
+  $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 && s.wifiMode !== 'ap' ? 'dauerhaft an' : 'aus in ' + dur(s.setupLeft);
   $('apnote').hidden = s.wifiMode !== 'ap'; $('unpair').disabled = !s.bond;
   if (!saved) { loadConfig(s.cfg); savedSsid = s.savedSsid || ''; fillNetworks([]); }
   if (s.wifiMode === 'ap' && !scannedOnce) { scannedOnce = true; scan(); }

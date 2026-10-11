@@ -80,7 +80,7 @@ Beziehung gleichzeitig führen.
 | Schnelles Blinken (blau) | Keine Remote gekoppelt |
 | Aufblitzen alle 2 Sekunden (blau) | Gekoppelt, die Remote schläft und meldet sich beim nächsten Tastendruck |
 | Dauerlicht (blau) | Verbunden |
-| Langsames Blinken (violett) | WLAN und Weboberfläche sind eingeschaltet |
+| Langsames Blinken (violett) | Eigener Hotspot offen: WLAN einrichten |
 | Flackern (weiß) | Firmware-Update läuft, Finger weg vom Stecker |
 
 Wem Dauerlicht hinter dem Fernseher zu viel Lightshow ist: In den Einstellungen lässt sich die LED im
@@ -101,12 +101,14 @@ verbundenen Zustand ausschalten.
 
 ## Die Weboberfläche
 
-Im Normalbetrieb ist das WLAN aus. Eingeschaltet wird es mit einem kurzen Druck auf **BOOT** am Dongle
-oder indem man die **Siri-Taste fünf Sekunden** hält. Endlich hat sie eine Aufgabe.
-
-Beim ersten Mal öffnet der Dongle ein eigenes Netz namens `siri-bridge-setup`. Verbinden, die Seite
+Beim ersten Start öffnet der Dongle ein eigenes Netz namens `siri-bridge-setup`. Verbinden, die Seite
 geht von selbst auf (sonst `http://192.168.4.1`), Heimnetz auswählen, Passwort eintragen. Danach hängt
-er im Heimnetz. Findet er es nicht, kommt der Hotspot nach etwa 15 Sekunden zurück.
+er im Heimnetz und bleibt dort erreichbar. Findet er es nicht, kommt der Hotspot nach etwa 15 Sekunden
+zurück. Der Hotspot selbst schaltet sich nach zehn Minuten ohne Zugriff ab.
+
+Ein kurzer Druck auf **BOOT** am Dongle oder fünf Sekunden auf der **Siri-Taste** schalten das WLAN
+aus und wieder ein. Endlich hat sie eine Aufgabe. Wer das WLAN nicht dauerhaft laufen lassen will,
+stellt in den Einstellungen eine Abschaltzeit ein.
 
 ![Tastenbelegung](docs/tasten.png)
 
@@ -124,10 +126,10 @@ Die Oberfläche spricht bisher nur Deutsch. Eine Sprachumschaltung steht auf der
 
 Es gibt keins. Weder für den Hotspot noch für die Weboberfläche. Das ist Absicht.
 
-Das Ding ist eine Fernbedienungs-Brücke, kein Tresor. Das WLAN läuft nur, wenn man es einschaltet, und
-geht von selbst wieder aus. Wer in dieser Zeit im selben Netz sitzt, kann die Lautstärketaste umbelegen
-oder eine andere Firmware einspielen. Wer das im eigenen Wohnzimmer für ein realistisches Szenario
-hält, stellt „WLAN automatisch ausschalten“ nicht auf „nie“ und lässt ansonsten die Kirche im Dorf.
+Das Ding ist eine Fernbedienungs-Brücke, kein Tresor. Wer im selben Netz sitzt, kann die
+Lautstärketaste umbelegen oder eine andere Firmware einspielen. Wer das im eigenen Wohnzimmer für ein
+realistisches Szenario hält, stellt „WLAN automatisch ausschalten“ auf ein paar Minuten, dann ist die
+Weboberfläche nur noch auf Knopfdruck da. Alle anderen lassen die Kirche im Dorf.
 
 ## Update und Rückfall
 

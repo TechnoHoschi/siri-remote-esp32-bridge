@@ -63,7 +63,7 @@ static Config defaultConfig() {
   c.ledDarkWhenConnected = 0;
   c.connInterval = 12;
   c.staleMs = 0;
-  c.setupMinutes = 10;
+  c.setupMinutes = 0;  // WLAN ab Werk dauerhaft an
   c.siriSetup = 1;
   return c;
 }

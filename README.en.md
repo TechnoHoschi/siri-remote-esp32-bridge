@@ -81,7 +81,7 @@ relationship at a time.
 | Fast blinking (blue) | No remote paired |
 | A flash every 2 seconds (blue) | Paired; the remote is asleep and will connect on the next key press |
 | Solid (blue) | Connected |
-| Slow blinking (violet) | Wi-Fi and web interface are on |
+| Slow blinking (violet) | Own hotspot is open: set up Wi-Fi |
 | Flickering (white) | Firmware update in progress, hands off the plug |
 
 If a solid light behind the TV is too much of a light show, the settings let you turn the LED off
@@ -102,12 +102,14 @@ while connected.
 
 ## The web interface
 
-In normal operation Wi-Fi is off. Turn it on with a short press on **BOOT** on the dongle, or by
-holding the **Siri button for five seconds**. Finally it has a job.
-
-The first time, the dongle opens its own network called `siri-bridge-setup`. Connect, the page opens
+On first start the dongle opens its own network called `siri-bridge-setup`. Connect, the page opens
 by itself (otherwise `http://192.168.4.1`), pick your home network, enter the password. After that it
-joins your network. If it cannot find it, the hotspot returns after about 15 seconds.
+joins your network and stays reachable there. If it cannot find it, the hotspot returns after about
+15 seconds. The hotspot itself switches off after ten minutes without access.
+
+A short press on **BOOT** on the dongle, or five seconds on the **Siri button**, turns Wi-Fi off and
+on again. Finally it has a job. If you do not want Wi-Fi running permanently, set a switch-off time in
+the settings.
 
 ![Button mapping](docs/tasten.png)
 
@@ -123,10 +125,10 @@ levels of "undo everything": forget Wi-Fi, reset settings, factory reset.
 
 There are none. Not for the hotspot, not for the web interface. That is on purpose.
 
-This thing is a remote control bridge, not a vault. Wi-Fi only runs when you switch it on and turns
-itself off again. Anyone on the same network during that time can remap your volume button or upload
-different firmware. If you consider that a realistic scenario in your own living room, do not set
-"turn Wi-Fi off automatically" to "never", and otherwise let's keep a sense of proportion.
+This thing is a remote control bridge, not a vault. Anyone on the same network can remap your volume
+button or upload different firmware. If you consider that a realistic scenario in your own living
+room, set "turn Wi-Fi off automatically" to a few minutes, and the web interface only exists at the
+push of a button. Everyone else can keep a sense of proportion.
 
 ## Updates and rollback
 

@@ -9,9 +9,10 @@
 //   BOOT kurz drücken   Setup-Modus ein/aus (WLAN + Weboberfläche: Status, Mapping, LED, Timing, OTA)
 //   BOOT 3 s halten     Bond löschen und neu starten (danach Remote in den Pairing-Modus bringen)
 //   Siri 5 s halten     Setup-Modus ein/aus von der Remote aus (abschaltbar)
-// Der Setup-Modus endet nach einstellbarer Zeit ohne Zugriff; mit „nie“ bleibt das WLAN dauerhaft an.
+// Ab Werk bleibt das WLAN im Heimnetz dauerhaft an; einstellbar ist eine Abschaltzeit ohne Zugriff.
+// Der eigene offene Hotspot schaltet sich dagegen immer nach spätestens 10 min ohne Zugriff ab.
 // Status-LED: schnelles Blinken = kein Bond; Aufblitzen alle 2 s = gekoppelt, nicht verbunden;
-// Dauerlicht = verbunden; langsames Blinken (violett) = Setup-Modus; Flackern (weiß) = Firmware-Update.
+// Dauerlicht = verbunden; langsames Blinken (violett) = eigener Hotspot offen; Flackern (weiß) = Update.
 
 #include <DNSServer.h>
 #include <ESPmDNS.h>
@@ -134,7 +135,7 @@ static void updateLed(bool force = false) {
   if (otaRunning) {
     on = (now % 100) < 50;
     color = 2;
-  } else if (setupActive()) {
+  } else if (wifiState == WIFI_ACCESS_POINT) {  // Hotspot offen: WLAN muss eingerichtet werden
     on = (now % 1000) < 500;
     color = 1;
   } else if (linkUp) {
@@ -393,6 +394,14 @@ static String savedSsid() {
 
 static void touch() { lastHttpAt = millis(); }
 
+// Nach so vielen Millisekunden ohne Zugriff geht das WLAN aus; 0 = nie. Der offene Hotspot bleibt nie
+// dauerhaft an, auch wenn für das Heimnetz „nie“ eingestellt ist.
+static uint32_t setupLimitMs() {
+  uint32_t minutes = cfg.setupMinutes;
+  if (minutes == 0 && wifiState == WIFI_ACCESS_POINT) minutes = 10;
+  return minutes * 60000UL;
+}
+
 static void handleState() {
   touch();
   const char *ble = linkUp ? "connected" : connectPending ? "connecting" : isBonded() ? "searching" : "pairing";
@@ -410,7 +419,7 @@ static void handleState() {
   s += ",\"wifiMode\":\"" + String(ap ? "ap" : wifiState == WIFI_STATION ? "sta" : "verbindet") + "\"";
   s += ",\"ssid\":\"" + jsonEscape(ap ? String(AP_SSID) : WiFi.SSID()) + "\",\"ip\":\"" + (ap ? WiFi.softAPIP() : WiFi.localIP()).toString() + "\"";
   s += ",\"savedSsid\":\"" + jsonEscape(savedSsid()) + "\"";
-  uint32_t limit = (uint32_t)cfg.setupMinutes * 60000UL, idle = millis() - lastHttpAt;  // 0 Minuten = dauerhaft an
+  uint32_t limit = setupLimitMs(), idle = millis() - lastHttpAt;  // limit 0 = dauerhaft an
   s += ",\"setupLeft\":" + String(idle < limit ? (limit - idle) / 1000 : 0) + ",\"cfg\":" + configJson(cfg) + "}";
   server.send(200, "application/json", s);
 }
@@ -642,7 +651,9 @@ static void serviceSetup() {
     }
   }
   server.handleClient();
-  bool timedOut = cfg.setupMinutes > 0 && millis() - lastHttpAt > (uint32_t)cfg.setupMinutes * 60000UL;
+  uint32_t limit = setupLimitMs();
+  bool busy = wifiState == WIFI_ACCESS_POINT && WiFi.softAPgetStationNum() > 0;  // jemand hängt im Hotspot
+  bool timedOut = limit > 0 && !busy && millis() - lastHttpAt > limit;
   if (setupOffRequested || timedOut) {
     setupOffRequested = false;
     delay(200);
