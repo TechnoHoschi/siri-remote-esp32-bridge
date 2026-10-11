@@ -101,5 +101,8 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
    Display und IR-Sender. Kandidaten (2026-10-11 recherchiert, nichts davon getestet): LilyGO T-Dongle-S3
    (0,96″-Display ST7735, APA102-LED, BOOT-Taste) und T-Dongle-S3 Plus (zusätzlich IR-Sender), M5Stack
    AtomS3U (WS2812 an GPIO35, Taste GPIO41, IR-Sender GPIO12, kein Display), Waveshare ESP32-S3-GEEK
-   (1,14″-Display). Nötig dafür: Taster-Pin einstellbar (bisher GPIO0 fest), LED-Art APA102, Display-Treiber
+   (1,14″-Display), Waveshare ESP32-S3-LCD-1.47 (1,47″-Display ST7789, USB-A – erstes Zielboard, beim
+   Projektinhaber bestellt), Waveshare ESP32-S3-Zero (USB-C, gleicher Chip wie der Super Mini). Im Auge
+   behalten: ZeroTrace Dongle (zerotrace.one, nackter USB-A-Stick, 16 MB Flash, RGB-LED; gefällt dem
+   Projektinhaber, ist ihm mit rund 35–40 € aber derzeit zu teuer; Pinbelegung undokumentiert). Nötig dafür: Taster-Pin einstellbar (bisher GPIO0 fest), LED-Art APA102, Display-Treiber
    mit Statusanzeige (Zustand, Akku, Profil, IP), je Board eine Build-Variante samt Installer-Eintrag.
