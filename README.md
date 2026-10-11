@@ -82,6 +82,7 @@ Beziehung gleichzeitig führen.
 | Dauerlicht (blau) | Verbunden |
 | Langsames Blinken (violett) | Eigener Hotspot offen: WLAN einrichten |
 | Flackern (weiß) | Firmware-Update läuft, Finger weg vom Stecker |
+| Dreimal Blinken (gelb) | WLAN wurde gerade ein- oder ausgeschaltet |
 
 Wem Dauerlicht hinter dem Fernseher zu viel Lightshow ist: In den Einstellungen lässt sich die LED im
 verbundenen Zustand ausschalten.
@@ -107,8 +108,19 @@ er im Heimnetz und bleibt dort erreichbar. Findet er es nicht, kommt der Hotspot
 zurück. Der Hotspot selbst schaltet sich nach zehn Minuten ohne Zugriff ab.
 
 Ein kurzer Druck auf **BOOT** am Dongle oder fünf Sekunden auf der **Siri-Taste** schalten das WLAN
-aus und wieder ein. Endlich hat sie eine Aufgabe. Wer das WLAN nicht dauerhaft laufen lassen will,
-stellt in den Einstellungen eine Abschaltzeit ein.
+aus und wieder ein; die LED quittiert das mit dreimal Gelb. Endlich hat die Siri-Taste eine Aufgabe.
+Wer das WLAN nicht dauerhaft laufen lassen will, stellt in den Einstellungen eine Abschaltzeit ein.
+Auch eine feste IP-Adresse lässt sich dort vergeben.
+
+Die BOOT-Taste kann noch mehr, jeweils beim Loslassen:
+
+| BOOT halten | LED dabei | Wirkung |
+|---|---|---|
+| kurz | – | WLAN ein/aus |
+| 3 Sekunden | blinkt rot | Remote entkoppeln |
+| 10 Sekunden | weiß | Werkszustand: Kopplung, Einstellungen und WLAN weg |
+
+Die letzte Stufe ist der Notausgang, falls man sich mit einer falschen IP-Adresse ausgesperrt hat.
 
 ![Tastenbelegung](docs/tasten.png)
 

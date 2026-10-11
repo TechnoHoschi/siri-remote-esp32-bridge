@@ -85,7 +85,7 @@
   .legend { display:grid; grid-template-columns:auto 1fr; gap:9px 12px; align-items:center; margin:0; font-size:14px; }
   .lamp { width:13px; height:13px; border-radius:50%; background:var(--accent); }
   .lamp.fast { animation:blink .4s steps(1) infinite; } .lamp.flash { animation:flash 2s steps(1) infinite; }
-  .lamp.slow { animation:blink 1s steps(1) infinite; background:var(--violet); } .lamp.white { background:#c9c9c9; animation:blink .12s steps(1) infinite; }
+  .lamp.slow { animation:blink 1s steps(1) infinite; background:var(--violet); } .lamp.yellow { background:#f0a000; animation:blink 1s steps(1) 3; } .lamp.white { background:#c9c9c9; animation:blink .12s steps(1) infinite; }
   @keyframes blink { 50% { opacity:.12; } } @keyframes flash { 0% { opacity:1; } 6%,100% { opacity:.12; } }
 
   /* Tasten: gezeichnete Remote + Editor. Maße nach der echten Siri Remote (Breite ≈ 26 % der Höhe). */
@@ -137,8 +137,9 @@
   .all span:last-child { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
   .pw, .pick { display:inline-flex; gap:6px; align-items:center; max-width:100%; } .pw button, .pick button { padding:7px 10px; line-height:1; }
-  .pick select { min-width:0; max-width:230px; }
+  .pick select { min-width:0; max-width:230px; } .pw input { width:230px; }
   progress { width:100%; height:8px; margin-top:10px; }
+  .loaded { margin-top:10px; padding:8px 12px; border-radius:8px; background:var(--accent-soft); font-size:14px; overflow-wrap:anywhere; }
   .reset { display:grid; grid-template-columns:1fr auto; gap:12px 16px; align-items:center; }
   .reset div b { display:block; } .reset div span { color:var(--muted); font-size:13px; }
   .reset > div:nth-child(n+3) { border-top:1px solid var(--line); padding-top:12px; }
@@ -215,7 +216,9 @@
             <div class="lamp"></div><div><b>Dauerlicht</b> – Remote verbunden<span id="dark-note"></span></div>
             <div class="lamp slow"></div><div><b>Langsames Blinken<span class="rgb"> (violett)</span></b> – eigener Hotspot offen, WLAN einrichten</div>
             <div class="lamp white"></div><div><b>Flackern<span class="rgb"> (weiß)</span></b> – Firmware-Update läuft</div>
+            <div class="lamp yellow"></div><div><b>Dreimal Blinken<span class="rgb"> (gelb)</span></b> – WLAN wurde ein- oder ausgeschaltet</div>
           </div>
+          <p class="hint">BOOT-Taste am Dongle: kurz = WLAN ein/aus · 3 Sekunden halten (LED blinkt rot) = Remote entkoppeln · 10 Sekunden halten (LED weiß) = Werkszustand. Ausgeführt wird beim Loslassen.</p>
         </div>
       </div>
     </div>
@@ -276,9 +279,16 @@
             <span class="pick"><select id="netsel"></select><button type="button" id="scan" title="Netzwerke suchen" aria-label="Netzwerke suchen">↻</button></span></div>
           <div class="field" id="ssidrow" hidden><span>Netzwerkname</span><input type="text" name="ssid" maxlength="32" autocomplete="off"></div>
           <div class="field"><span>Passwort</span><span class="pw"><input type="password" name="pass" maxlength="64" autocomplete="new-password"><button type="button" id="eye" title="Passwort anzeigen" aria-label="Passwort anzeigen" aria-pressed="false">👁</button></span></div>
+          <div class="field"><span>IP-Adresse</span>
+            <select id="dhcp"><option value="1">automatisch (DHCP)</option><option value="0">manuell</option></select></div>
+          <div class="field manual" hidden><span>Adresse</span><input type="text" name="ip" inputmode="decimal" placeholder="192.168.178.50" maxlength="15"></div>
+          <div class="field manual" hidden><span>Subnetzmaske</span><input type="text" name="mask" inputmode="decimal" placeholder="255.255.255.0" maxlength="15"></div>
+          <div class="field manual" hidden><span>Gateway<small>optional</small></span><input type="text" name="gw" inputmode="decimal" placeholder="192.168.178.1" maxlength="15"></div>
+          <div class="field manual" hidden><span>DNS-Server<small>optional</small></span><input type="text" name="dns" inputmode="decimal" placeholder="192.168.178.1" maxlength="15"></div>
           <div class="actions"><button class="primary" type="submit">Mit diesem WLAN verbinden</button></div>
         </form>
-        <p class="hint">Ohne gespeichertes WLAN öffnet der Dongle das offene Netz <b>siri-bridge-setup</b>, Adresse <b>http://192.168.4.1</b>.</p>
+        <p class="hint">Ohne gespeichertes WLAN öffnet der Dongle das offene Netz <b>siri-bridge-setup</b>, Adresse <b>http://192.168.4.1</b>.
+          Ist der Dongle nach einer falschen manuellen Adresse nicht mehr erreichbar: BOOT 10 Sekunden halten stellt den Werkszustand her.</p>
       </div>
       <div class="card">
         <h2>Erreichbarkeit dieser Seite</h2>
@@ -302,10 +312,13 @@
       <div class="card">
         <h2>Sicherung</h2>
         <div class="actions" style="margin-top:0">
-          <button id="export">Konfiguration herunterladen</button>
-          <button id="importbtn">Sicherung laden …</button><input type="file" id="import" accept=".json,application/json" hidden>
+          <button id="export">Konfiguration sichern</button>
+          <button id="importbtn">Konfiguration laden</button><input type="file" id="import" accept=".json,application/json" hidden>
+          <button class="primary" id="importsave" disabled>Speichern</button>
         </div>
-        <p class="hint">Die Sicherung enthält Tastenbelegung, LED und die Optionen dieser Seite als JSON-Datei – nicht das WLAN-Passwort und nicht die Kopplung mit der Remote. Eine geladene Sicherung wird erst mit „Speichern“ übernommen.</p>
+        <div class="loaded" id="loaded" hidden></div>
+        <p class="hint"><b>Sichern</b> lädt Tastenbelegung, LED und die Optionen dieser Seite als JSON-Datei herunter – ohne WLAN-Passwort und ohne Kopplung.
+          <b>Laden</b> liest eine solche Datei ein; auf den Dongle kommt sie erst mit <b>Speichern</b>.</p>
       </div>
     </div>
     <div class="card" style="margin-top:16px">
@@ -398,6 +411,7 @@ window.onhashchange = () => showTab(location.hash.slice(1));
 
 // ---- Einstellungen: Entwurf, Speichern ----------------------------------------------------------
 const SETTINGS = ['ledType','ledPin','ledBri','ledInv','ledDark','itv','stale','mins','siri'];
+const dirty = () => differs(['map']) || differs(SETTINGS);
 const differs = keys => saved && keys.some(k => JSON.stringify(saved[k]) !== JSON.stringify(draft[k]));
 function syncDirty() {
   const keysDirty = differs(['map']), settingsDirty = differs(SETTINGS), any = keysDirty || settingsDirty;
@@ -423,13 +437,14 @@ function syncLed() {
 for (const [id, kind] of [['ledType','n'],['ledPin','n'],['ledBri','n'],['ledInv','c'],['ledDark','c'],['itv','n'],['stale','n'],['mins','n'],['siri','c']]) {
   $(id).oninput = () => { draft[id] = kind === 'c' ? ($(id).checked ? 1 : 0) : +$(id).value; syncLed(); syncDirty(); };
 }
-all('.discard').forEach(b => b.onclick = () => { draft = JSON.parse(JSON.stringify(saved)); renderConfig(); });
-all('.save').forEach(b => b.onclick = async () => {
+all('.discard').forEach(b => b.onclick = () => { draft = JSON.parse(JSON.stringify(saved)); renderConfig(); clearLoaded(); });
+async function saveConfig() {
   const body = new URLSearchParams();
   draft.map.forEach((a, i) => body.set('m' + i, `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`));
   for (const k of SETTINGS) body.set(k, draft[k]);
-  try { await post('/api/config', body); saved = null; await refresh(); toast('Gespeichert.'); } catch (err) { toast('Fehler: ' + err.message, true); }
-});
+  try { await post('/api/config', body); saved = null; await refresh(); clearLoaded(); toast('Gespeichert.'); } catch (err) { toast('Fehler: ' + err.message, true); }
+}
+all('.save').forEach(b => b.onclick = saveConfig);
 
 // ---- Tasten -------------------------------------------------------------------------------------
 function renderKeys() {
@@ -510,7 +525,7 @@ async function refresh() {
   $('wifi').textContent = s.wifiMode === 'ap' ? 'eigenes Netz ' + s.ssid : s.wifiMode === 'sta' ? s.ssid : 'verbindet …';
   $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 && s.wifiMode !== 'ap' ? 'dauerhaft an' : 'aus in ' + dur(s.setupLeft);
   $('apnote').hidden = s.wifiMode !== 'ap'; $('unpair').disabled = !s.bond;
-  if (!saved) { loadConfig(s.cfg); savedSsid = s.savedSsid || ''; fillNetworks([]); }
+  if (!saved) { loadConfig(s.cfg); savedSsid = s.savedSsid || ''; fillNetworks([]); fillNet(s.net); }
   if (s.wifiMode === 'ap' && !scannedOnce) { scannedOnce = true; scan(); }
   $('legend-box').hidden = s.cfg.ledType === 0;
   all('.rgb').forEach(e => e.hidden = s.cfg.ledType !== 1);
@@ -524,7 +539,7 @@ confirmed($('reboot'), async () => { await post('/api/reboot'); toast('Dongle st
 confirmed($('defaults'), async () => { await post('/api/defaults'); saved = null; await refresh(); toast('Einstellungen zurückgesetzt.'); });
 confirmed($('factory'), async () => { await post('/api/factory-reset'); toast('Werkszustand hergestellt – der Dongle startet neu und öffnet sein eigenes Netz.'); });
 confirmed($('wififorget'), async () => {
-  await post('/api/wifi', new URLSearchParams({ssid:'', pass:''})); savedSsid = ''; fillNetworks([]);
+  await post('/api/wifi', new URLSearchParams({ssid:'', pass:''})); savedSsid = ''; fillNetworks([]); fillNet();
   toast('WLAN vergessen – der Dongle öffnet sein eigenes Netz siri-bridge-setup.');
 });
 
@@ -562,11 +577,31 @@ $('eye').onclick = () => {
   input.type = show ? 'text' : 'password'; $('eye').setAttribute('aria-pressed', show); $('eye').style.opacity = show ? 1 : .6;
 };
 hidePassword();
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+function syncNet() { all('.manual').forEach(e => e.hidden = $('dhcp').value !== '0'); }
+function fillNet(net) {
+  const f = $('wifiform'); net = net || {dhcp:true};
+  $('dhcp').value = net.dhcp ? '1' : '0';
+  for (const k of ['ip','mask','gw','dns']) f[k].value = net[k] || '';
+  f.pass.placeholder = savedSsid ? 'gespeichert – leer lassen zum Beibehalten' : '';
+  syncNet();
+}
+$('dhcp').onchange = syncNet;
 $('wifiform').onsubmit = async e => {
   e.preventDefault(); const f = e.target; hidePassword();
   if (!f.ssid.value) return toast('Bitte ein Netzwerk auswählen oder suchen.', true);
-  try { await post('/api/wifi', new URLSearchParams({ssid:f.ssid.value, pass:f.pass.value})); savedSsid = f.ssid.value; f.pass.value = ''; toast('Gespeichert – der Dongle wechselt jetzt ins WLAN.'); }
-  catch (err) { toast('Fehler: ' + err.message, true); }
+  const body = new URLSearchParams({ssid:f.ssid.value, pass:f.pass.value, dhcp:$('dhcp').value});
+  // Leeres Passwortfeld beim schon gespeicherten Netz heißt: Passwort behalten (z. B. nur die Adresse ändern).
+  if (!f.pass.value && f.ssid.value === savedSsid) body.set('keep', '1');
+  if ($('dhcp').value === '0') {
+    if (!IPV4.test(f.ip.value) || !IPV4.test(f.mask.value)) return toast('Adresse und Subnetzmaske bitte als vier Zahlen mit Punkten eintragen.', true);
+    for (const k of ['gw','dns']) if (f[k].value && !IPV4.test(f[k].value)) return toast('Gateway und DNS-Server bitte als vier Zahlen mit Punkten eintragen oder leer lassen.', true);
+    for (const k of ['ip','mask','gw','dns']) body.set(k, f[k].value);
+  }
+  try {
+    await post('/api/wifi', body); savedSsid = f.ssid.value; f.pass.value = ''; f.pass.placeholder = 'gespeichert – leer lassen zum Beibehalten';
+    toast($('dhcp').value === '0' ? `Gespeichert – der Dongle ist gleich unter http://${f.ip.value} erreichbar.` : 'Gespeichert – der Dongle wechselt jetzt ins WLAN.');
+  } catch (err) { toast('Fehler: ' + err.message, true); }
 };
 
 // ---- Sicherung ----------------------------------------------------------------------------------
@@ -576,6 +611,9 @@ $('export').onclick = () => {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
   a.download = `siri-bridge-config-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
 };
+// Der Speichern-Knopf der Sicherung ist nur aktiv, solange eine geladene Datei auf das Übernehmen wartet.
+function clearLoaded() { $('loaded').hidden = true; $('importsave').disabled = true; }
+$('importsave').onclick = saveConfig;
 $('importbtn').onclick = () => $('import').click();
 $('import').onchange = async e => {
   try {
@@ -583,8 +621,11 @@ $('import').onchange = async e => {
     if (j.type !== 'siri-bridge-config' || !c || !Array.isArray(c.map) || c.map.length !== draft.map.length) throw new Error('falsches Format');
     draft.map.forEach((a, i) => { a.t = +c.map[i].t || 0; a.m = +c.map[i].m || 0; a.c = +c.map[i].c || 0; });
     for (const k of SETTINGS) if (k in c) draft[k] = +c[k] || 0;
-    renderConfig(); toast('Sicherung geladen – mit „Speichern“ übernehmen.');
-  } catch (err) { toast('Das ist keine gültige Sicherung.', true); }
+    renderConfig();
+    $('loaded').textContent = `Geladen: ${e.target.files[0].name}` + (dirty() ? ' – noch nicht auf dem Dongle.' : ' – entspricht der aktuellen Konfiguration des Dongles.');
+    $('loaded').hidden = false; $('importsave').disabled = false;
+    toast('Konfiguration geladen – mit „Speichern“ auf den Dongle übernehmen.');
+  } catch (err) { toast('Das ist keine gültige Konfigurationsdatei.', true); }
   e.target.value = '';
 };
 

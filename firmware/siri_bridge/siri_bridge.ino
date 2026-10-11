@@ -8,6 +8,7 @@
 // Bedienung am Dongle:
 //   BOOT kurz drücken   Setup-Modus ein/aus (WLAN + Weboberfläche: Status, Mapping, LED, Timing, OTA)
 //   BOOT 3 s halten     Bond löschen und neu starten (danach Remote in den Pairing-Modus bringen)
+//   BOOT 10 s halten    Werkszustand: Kopplung, Einstellungen und WLAN löschen
 //   Siri 5 s halten     Setup-Modus ein/aus von der Remote aus (abschaltbar)
 // Ab Werk bleibt das WLAN im Heimnetz dauerhaft an; einstellbar ist eine Abschaltzeit ohne Zugriff.
 // Der eigene offene Hotspot schaltet sich dagegen immer nach spätestens 10 min ohne Zugriff ab.
@@ -100,6 +101,8 @@ static bool factoryResetRequested = false;
 static uint32_t apSince = 0;
 static uint32_t rebootAt = 0;
 static uint8_t ledPinInUse = 255;
+static uint32_t wifiSignalAt = 0;  // millis() beim Start des gelben Blinksignals (0 = keins)
+static uint8_t bootStage = 0;      // BOOT gehalten: 1 = ab 3 s (entkoppeln), 2 = ab 10 s (Werkszustand)
 
 static bool isBonded() { return NimBLEDevice::getNumBonds() > 0; }
 static bool setupActive() { return wifiState != WIFI_IDLE; }
@@ -131,8 +134,17 @@ static void updateLed(bool force = false) {
   }
   // Muster und Farbe je Zustand; die Farbe wirkt nur bei einer RGB-LED.
   bool on;
-  uint8_t color;  // 0 blau, 1 violett, 2 weiß
-  if (otaRunning) {
+  uint8_t color;  // 0 blau, 1 violett, 2 weiß, 3 gelb, 4 rot
+  if (bootStage == 2) {  // BOOT ab 10 s gehalten: Loslassen stellt den Werkszustand her
+    on = true;
+    color = 2;
+  } else if (bootStage == 1) {  // BOOT ab 3 s gehalten: Loslassen entkoppelt die Remote
+    on = (now % 200) < 100;
+    color = 4;
+  } else if (wifiSignalAt && now - wifiSignalAt < 3000) {  // WLAN ein-/ausgeschaltet: 3x gelb
+    on = ((now - wifiSignalAt) % 1000) < 500;
+    color = 3;
+  } else if (otaRunning) {
     on = (now % 100) < 50;
     color = 2;
   } else if (wifiState == WIFI_ACCESS_POINT) {  // Hotspot offen: WLAN muss eingerichtet werden
@@ -151,7 +163,7 @@ static void updateLed(bool force = false) {
   int state = on ? color + 1 : 0;
   if (state == shown && !force) return;
   shown = state;
-  static const uint8_t COLORS[3][3] = {{0, 0, 255}, {150, 0, 255}, {255, 255, 255}};
+  static const uint8_t COLORS[5][3] = {{0, 0, 255}, {150, 0, 255}, {255, 255, 255}, {255, 150, 0}, {255, 0, 0}};
   ledWrite(on, COLORS[color][0], COLORS[color][1], COLORS[color][2]);
 }
 
@@ -247,9 +259,11 @@ static void startScan() {
   NimBLEScan *scan = NimBLEDevice::getScan();
   scan->setScanCallbacks(&scanCallbacks, false);
   scan->setActiveScan(false);  // alles Nötige steht im Advertising selbst
-  // Im Setup-Modus teilt sich BLE das Funkmodul mit dem WLAN: dann nur die halbe Zeit scannen.
-  scan->setInterval(48);  // 30 ms
-  scan->setWindow(setupActive() ? 24 : 48);
+  // BLE und WLAN teilen sich ein Funkmodul. Ein Scan über die volle Zeit lässt dem WLAN nichts übrig:
+  // ohne gekoppelte Remote (Dauer-Scan) konnte sich dann niemand mit dem Hotspot verbinden. Mit aktivem
+  // WLAN deshalb nur 30 von 150 ms scannen.
+  scan->setInterval(240);                      // 150 ms
+  scan->setWindow(setupActive() ? 48 : 240);  // 30 ms bzw. durchgehend
   scan->start(0, false, true);
   Serial.printf("[scan] gestartet (%s)\n", isBonded() ? "warte auf gebondete Remote" : "kein Bond: warte auf Remote im Pairing-Modus");
 }
@@ -384,6 +398,14 @@ static String jsonEscape(const String &in) {
   return out;
 }
 
+// Nach dem Ein- oder Ausschalten des WLANs einen laufenden Scan mit passender Funkzeit neu starten.
+static void retuneScan() {
+  NimBLEScan *scan = NimBLEDevice::getScan();
+  if (!scan->isScanning()) return;
+  scan->stop();
+  scanAt = millis() + 100;
+}
+
 static String savedSsid() {
   Preferences prefs;
   prefs.begin("bridge", true);
@@ -418,7 +440,15 @@ static void handleState() {
   bool ap = wifiState == WIFI_ACCESS_POINT;
   s += ",\"wifiMode\":\"" + String(ap ? "ap" : wifiState == WIFI_STATION ? "sta" : "verbindet") + "\"";
   s += ",\"ssid\":\"" + jsonEscape(ap ? String(AP_SSID) : WiFi.SSID()) + "\",\"ip\":\"" + (ap ? WiFi.softAPIP() : WiFi.localIP()).toString() + "\"";
-  s += ",\"savedSsid\":\"" + jsonEscape(savedSsid()) + "\"";
+  {
+    Preferences prefs;
+    prefs.begin("bridge", true);
+    String ip = prefs.getString("ip", "");
+    s += ",\"savedSsid\":\"" + jsonEscape(prefs.getString("ssid", "")) + "\",\"net\":{\"dhcp\":" + (ip.isEmpty() ? "true" : "false") +
+         ",\"ip\":\"" + ip + "\",\"mask\":\"" + prefs.getString("mask", "") + "\",\"gw\":\"" + prefs.getString("gw", "") +
+         "\",\"dns\":\"" + prefs.getString("dns", "") + "\"}";
+    prefs.end();
+  }
   uint32_t limit = setupLimitMs(), idle = millis() - lastHttpAt;  // limit 0 = dauerhaft an
   s += ",\"setupLeft\":" + String(idle < limit ? (limit - idle) / 1000 : 0) + ",\"cfg\":" + configJson(cfg) + "}";
   server.send(200, "application/json", s);
@@ -488,6 +518,7 @@ static void joinWifi() {
   Preferences prefs;
   prefs.begin("bridge", true);
   String ssid = prefs.getString("ssid", ""), pass = prefs.getString("pass", "");
+  String ip = prefs.getString("ip", ""), mask = prefs.getString("mask", ""), gw = prefs.getString("gw", ""), nameserver = prefs.getString("dns", "");
   prefs.end();
   if (ssid.isEmpty()) {
     startAccessPoint();
@@ -498,17 +529,28 @@ static void joinWifi() {
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
   WiFi.setHostname(HOSTNAME);
+  IPAddress address, netmask, gateway, dnsServer;
+  if (address.fromString(ip) && netmask.fromString(mask)) {  // feste Adresse; Gateway und DNS sind optional
+    gateway.fromString(gw);
+    dnsServer.fromString(nameserver);
+    WiFi.config(address, gateway, netmask, dnsServer);
+  } else {
+    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);  // DHCP
+  }
   WiFi.begin(ssid.c_str(), pass.c_str());
   wifiState = WIFI_JOINING;
   wifiDeadline = millis() + 15000;
   Serial.printf("[wifi] verbinde mit \"%s\" ...\n", ssid.c_str());
 }
 
-static void startSetup() {
+// signal: gelbes Blinksignal an der LED, wenn jemand das WLAN von Hand umschaltet (nicht beim Start).
+static void startSetup(bool signal = true) {
   if (setupActive()) return;
   Serial.println("[setup] Setup-Modus EIN");
   lastHttpAt = millis();
+  if (signal) wifiSignalAt = millis() | 1;
   joinWifi();
+  retuneScan();
 }
 
 static void stopSetup() {
@@ -521,19 +563,35 @@ static void stopSetup() {
   WiFi.disconnect(true);
   WiFi.mode(WIFI_OFF);
   wifiState = WIFI_IDLE;
+  wifiSignalAt = millis() | 1;
+  retuneScan();
 }
 
 static void handleWifi() {
   touch();
   String ssid = server.arg("ssid"), pass = server.arg("pass");
+  // Adressvergabe: dhcp=1 automatisch, dhcp=0 fest (ip und mask Pflicht, gw und dns optional).
+  // Fehlt das Feld, bleibt die Adressvergabe unverändert. keep=1 behält das gespeicherte Passwort.
+  bool manual = server.arg("dhcp") == "0";
+  IPAddress check;
+  if (manual && (!check.fromString(server.arg("ip")) || !check.fromString(server.arg("mask")) ||
+                 (!server.arg("gw").isEmpty() && !check.fromString(server.arg("gw"))) ||
+                 (!server.arg("dns").isEmpty() && !check.fromString(server.arg("dns"))))) {
+    server.send(400, "text/plain", "Ungueltige IP-Angaben");
+    return;
+  }
   Preferences prefs;
   prefs.begin("bridge", false);
   if (ssid.isEmpty()) {
-    prefs.remove("ssid");
-    prefs.remove("pass");
+    for (const char *key : {"ssid", "pass", "ip", "mask", "gw", "dns"}) prefs.remove(key);
   } else {
     prefs.putString("ssid", ssid);
-    prefs.putString("pass", pass);
+    if (server.arg("keep") != "1") prefs.putString("pass", pass);
+    if (server.hasArg("dhcp")) {
+      for (const char *key : {"ip", "mask", "gw", "dns"}) {
+        if (manual) prefs.putString(key, server.arg(key)); else prefs.remove(key);
+      }
+    }
   }
   prefs.end();
   Serial.printf("[wifi] Zugangsdaten %s\n", ssid.isEmpty() ? "geloescht" : "gespeichert");
@@ -694,25 +752,29 @@ static void printStatus() {
   advSeen = 0;
 }
 
+// BOOT-Taste, ausgewertet beim Loslassen: kurz = WLAN ein/aus, ab 3 s = Remote entkoppeln, ab 10 s =
+// Werkszustand. Die LED zeigt die erreichte Stufe schon während des Haltens (rot blinkend, dann weiß).
 static void checkBootButton() {
   static uint32_t pressedSince = 0;
-  bool down = digitalRead(BOOT_BUTTON) == LOW;
-  if (down) {
+  if (digitalRead(BOOT_BUTTON) == LOW) {
     if (!pressedSince) pressedSince = millis();
-    if (millis() - pressedSince > 3000) {
-      Serial.println("[sys] BOOT 3 s gehalten: Bonds loeschen und neu starten");
-      NimBLEDevice::deleteAllBonds();
-      delay(300);
-      ESP.restart();
-    }
+    uint32_t held = millis() - pressedSince;
+    bootStage = held >= 10000 ? 2 : held >= 3000 ? 1 : 0;
     return;
   }
-  if (pressedSince) {
-    uint32_t held = millis() - pressedSince;
-    pressedSince = 0;
-    if (held > 50) {
-      if (setupActive()) stopSetup(); else startSetup();
-    }
+  if (!pressedSince) return;
+  uint32_t held = millis() - pressedSince;
+  pressedSince = 0;
+  bootStage = 0;
+  if (held >= 10000) {
+    factoryResetRequested = true;
+  } else if (held >= 3000) {
+    Serial.println("[sys] BOOT 3 s gehalten: Bonds loeschen und neu starten");
+    NimBLEDevice::deleteAllBonds();
+    delay(300);
+    ESP.restart();
+  } else if (held > 50) {
+    if (setupActive()) stopSetup(); else startSetup();
   }
 }
 
@@ -756,6 +818,7 @@ void setup() {
   consumer.begin();
   USB.begin();
   buttonQueue = xQueueCreate(32, sizeof(ButtonEvent));
+  WiFi.persistent(false);  // Zugangsdaten verwaltet die Firmware selbst im NVS
   setupRoutes();
 
   NimBLEDevice::init(HOSTNAME);
@@ -774,7 +837,7 @@ void setup() {
   bool setupOnBoot = prefs.getBool("setupboot", false);
   if (setupOnBoot) prefs.remove("setupboot");
   prefs.end();
-  if (setupOnBoot || cfg.setupMinutes == 0) startSetup();  // 0 Minuten = WLAN dauerhaft an
+  if (setupOnBoot || cfg.setupMinutes == 0) startSetup(false);  // 0 Minuten = WLAN dauerhaft an
 }
 
 void loop() {
@@ -795,6 +858,7 @@ void loop() {
     Serial.println("[sys] Werkszustand: loesche Bond, Einstellungen und WLAN");
     delay(300);
     NimBLEDevice::deleteAllBonds();
+    WiFi.disconnect(true, true);  // auch die vom WLAN-Treiber selbst gemerkten Zugangsdaten löschen
     Preferences prefs;
     prefs.begin("bridge", false);
     prefs.clear();

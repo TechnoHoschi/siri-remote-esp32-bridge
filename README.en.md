@@ -83,6 +83,7 @@ relationship at a time.
 | Solid (blue) | Connected |
 | Slow blinking (violet) | Own hotspot is open: set up Wi-Fi |
 | Flickering (white) | Firmware update in progress, hands off the plug |
+| Three blinks (yellow) | Wi-Fi was just switched on or off |
 
 If a solid light behind the TV is too much of a light show, the settings let you turn the LED off
 while connected.
@@ -108,8 +109,19 @@ joins your network and stays reachable there. If it cannot find it, the hotspot 
 15 seconds. The hotspot itself switches off after ten minutes without access.
 
 A short press on **BOOT** on the dongle, or five seconds on the **Siri button**, turns Wi-Fi off and
-on again. Finally it has a job. If you do not want Wi-Fi running permanently, set a switch-off time in
-the settings.
+on again; the LED acknowledges with three yellow blinks. Finally the Siri button has a job. If you do
+not want Wi-Fi running permanently, set a switch-off time in the settings. You can assign a static IP
+address there as well.
+
+The BOOT button can do more, each on release:
+
+| Hold BOOT | LED meanwhile | Effect |
+|---|---|---|
+| short press | – | Wi-Fi on/off |
+| 3 seconds | blinking red | Unpair the remote |
+| 10 seconds | white | Factory reset: pairing, settings and Wi-Fi gone |
+
+The last one is the emergency exit if a wrong IP address has locked you out.
 
 ![Button mapping](docs/tasten.png)
 

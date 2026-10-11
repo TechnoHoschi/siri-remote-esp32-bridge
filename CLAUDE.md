@@ -41,7 +41,7 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
 
 `GET /api/state` (Zustand + Einstellungen), `GET /api/live` (gedrückte Tasten, wird alle 150 ms
 abgefragt), `GET /api/scan` (WLANs), `POST /api/config`, `/api/defaults`, `/api/wifi` (leere SSID =
-vergessen), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`, `/api/ota`.
+vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns` für eine feste Adresse), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`, `/api/ota`.
 Ändert sich die API, auch den Beispieldaten-Server in `tools/ui_dev.py` nachziehen.
 
 ## Entscheidungen, die bewusst so sind
@@ -50,6 +50,8 @@ vergessen), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`
 - **WLAN ab Werk dauerhaft an** (im Heimnetz); eine Abschaltzeit ist einstellbar, BOOT kurz oder Siri 5 s
   schalten um. Der eigene offene Hotspot geht dagegen immer nach 10 min ohne Zugriff aus.
 - Die LED blinkt nur beim offenen Hotspot violett; im Heimnetz zeigt sie den Zustand der Remote.
+  Dreimal Gelb quittiert das Umschalten des WLANs.
+- BOOT-Taste, ausgewertet beim Loslassen: kurz = WLAN ein/aus, 3 s = entkoppeln, 10 s = Werkszustand.
 - **Lizenz MIT-0**, so offen wie möglich.
 - **Tastenwiederholung macht der Host**, nicht die Bridge.
 - Die Belegung wird als HID-Usage gespeichert, nicht als Zeichen.
@@ -63,6 +65,9 @@ vergessen), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`
   Adresse (siehe `docs/PROTOCOL.md`).
 - Der Rollback-Schutz bestätigt neue Firmware erst nach 15 s Laufzeit. Testen mit
   `EXTRA_FLAGS=-DCRASH_TEST firmware/build.sh siri_bridge`.
+- BLE-Scan und WLAN teilen sich das Funkmodul: Ein Scan über die volle Zeit (ohne Bond läuft er dauernd)
+  macht den Hotspot unbenutzbar. Mit aktivem WLAN deshalb nur 30 von 150 ms scannen (`startScan()`).
+- Kein `node` auf dem Pi: JavaScript der Weboberfläche mit `esprima` aus dem venv auf Syntax prüfen.
 - Browser-Dialoge (`confirm`, `alert`) in der Weboberfläche vermeiden; heikle Knöpfe bestätigen im Knopf.
 
 ## To-do (Reihenfolge des Projektinhabers)

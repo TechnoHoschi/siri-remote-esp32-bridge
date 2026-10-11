@@ -41,6 +41,7 @@ class Mock:
         self.scenario = "connected"
         self.cfg = default_config()
         self.ssid = "Heimnetz-IoT"
+        self.net = {"dhcp": True, "ip": "", "mask": "", "gw": "", "dns": ""}
 
     def state(self) -> dict:
         ap = self.scenario == "ap"
@@ -49,7 +50,7 @@ class Mock:
              "bond": "" if self.scenario == "pairing" else "f0:0d:ca:fe:12:34",
              "wifiMode": "ap" if ap else "sta", "ssid": "siri-bridge-setup" if ap else self.ssid,
              "ip": "192.168.4.1" if ap else "192.168.178.42", "savedSsid": "" if ap else self.ssid,
-             "setupLeft": 598, "cfg": self.cfg}
+             "setupLeft": 598, "cfg": self.cfg, "net": self.net}
         if s["ble"] == "connected":
             s.update(interval=self.cfg["itv"] * 1.25, rssi=-47, lastKey="Play/Pause", lastKeyAge=int(time.time()) % 90,
                      batt=56, power=0xAF)
@@ -78,6 +79,9 @@ class Mock:
             self.cfg = default_config()
         elif path == "/api/wifi":
             self.ssid = form.get("ssid", "")
+            if "dhcp" in form:
+                manual = form["dhcp"] == "0"
+                self.net = {"dhcp": not manual, **{k: form.get(k, "") if manual else "" for k in ("ip", "mask", "gw", "dns")}}
             self.scenario = "connected" if self.ssid else "ap"
         elif path == "/api/unpair":
             self.scenario = "pairing"
