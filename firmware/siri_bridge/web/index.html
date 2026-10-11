@@ -140,6 +140,7 @@
   .pick select { min-width:0; max-width:230px; } .pw input { width:230px; }
   progress { width:100%; height:8px; margin-top:10px; }
   .loaded { margin-top:10px; padding:8px 12px; border-radius:8px; background:var(--accent-soft); font-size:14px; overflow-wrap:anywhere; }
+  .loaded.ok { background:color-mix(in srgb, var(--ok) 18%, transparent); } .loaded.err { background:color-mix(in srgb, var(--bad) 18%, transparent); }
   .reset { display:grid; grid-template-columns:1fr auto; gap:12px 16px; align-items:center; }
   .reset div b { display:block; } .reset div span { color:var(--muted); font-size:13px; }
   .reset > div:nth-child(n+3) { border-top:1px solid var(--line); padding-top:12px; }
@@ -241,7 +242,7 @@
           <div class="edrow" id="ed-consrow"><span>Funktion</span><select id="ed-cons"></select></div>
         </div>
         <div class="all" id="all"></div>
-        <div class="savebar"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
+        <div class="savebar" data-keys="map"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
         <p class="hint"><label class="check"><input type="checkbox" id="follow"> Beim Drücken einer Taste auf der Remote automatisch zu ihr springen</label></p>
         <p class="hint">Gedrückte Tasten leuchten links live auf. Gesendet werden USB-Tastencodes (US-Layout); gedrückt halten wiederholt die Taste – das erledigt das angeschlossene Gerät.</p>
       </div>
@@ -260,6 +261,7 @@
         <div class="field led-rgb"><span>Helligkeit<small id="bri-val"></small></span><input type="range" id="ledBri" min="1" max="255"></div>
         <div class="field led-gpio"><span>Polarität</span><label class="check"><input type="checkbox" id="ledInv"> leuchtet bei LOW (invertiert)</label></div>
         <div class="field led-any"><span>Im Betrieb</span><label class="check"><input type="checkbox" id="ledDark"> aus, solange die Remote verbunden ist</label></div>
+        <div class="savebar" data-keys="ledType,ledPin,ledBri,ledInv,ledDark"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
         <p class="hint">Voreinstellung für den ESP32-S3 Super Mini: RGB-LED an GPIO 48. Ein falscher Pin kann andere Funktionen des Boards stören – im Zweifel „keine“ wählen.</p>
       </div>
       <div class="card">
@@ -267,6 +269,7 @@
         <div class="field"><span>Verbindungsintervall<small>kürzer = schnellere Reaktion, mehr Akkuverbrauch</small></span>
           <select id="itv"><option value="6">7,5 ms (schnellste)</option><option value="9">11,25 ms</option><option value="12">15 ms (Standard)</option></select></div>
         <div class="field"><span>Alte Tastendrücke verwerfen<small>Millisekunden nach dem Verbinden, 0 = aus</small></span><input type="number" id="stale" min="0" max="5000" step="50"></div>
+        <div class="savebar" data-keys="itv,stale"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
         <p class="hint">Das Intervall gilt ab der nächsten Verbindung. Die Remote puffert Tastendrücke, während sie nicht verbunden ist, und liefert sie beim Verbinden nach; der Filter unterdrückt solche Altlasten.</p>
       </div>
     </div>
@@ -295,10 +298,10 @@
         <div class="field"><span>WLAN automatisch ausschalten<small>nach dieser Zeit ohne Zugriff auf die Seite</small></span>
           <select id="mins"><option value="5">nach 5 Minuten</option><option value="10">nach 10 Minuten</option><option value="30">nach 30 Minuten</option><option value="60">nach 60 Minuten</option><option value="0">nie – dauerhaft an (Standard)</option></select></div>
         <div class="field"><span>Per Fernbedienung einschalten</span><label class="check"><input type="checkbox" id="siri"> Siri 5 Sekunden halten</label></div>
+        <div class="savebar" data-keys="mins,siri"><button class="primary save">Speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
         <p class="hint">Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar – ohne Passwort, einschließlich Firmware-Update. Der eigene Hotspot des Dongles schaltet sich immer nach 10 Minuten ohne Zugriff ab.</p>
       </div>
     </div>
-    <div class="savebar"><button class="primary save">Einstellungen speichern</button><button class="discard">Verwerfen</button><span class="dirtynote"></span></div>
 
     <h3 class="group">Wartung</h3>
     <div class="cards wide">
@@ -307,6 +310,7 @@
         <input type="file" id="fw" accept=".bin">
         <progress id="fwprog" value="0" max="100" hidden></progress>
         <div class="actions"><button class="primary" id="fwgo">Update einspielen</button></div>
+        <div class="loaded" id="fwstatus" hidden></div>
         <p class="hint">Die Datei <b>…-ota.bin</b> aus dem Release wählen, nicht die merged-Datei. Kopplung und Einstellungen bleiben erhalten; danach startet der Dongle neu.</p>
       </div>
       <div class="card">
@@ -414,11 +418,13 @@ const SETTINGS = ['ledType','ledPin','ledBri','ledInv','ledDark','itv','stale','
 const dirty = () => differs(['map']) || differs(SETTINGS);
 const differs = keys => saved && keys.some(k => JSON.stringify(saved[k]) !== JSON.stringify(draft[k]));
 function syncDirty() {
-  const keysDirty = differs(['map']), settingsDirty = differs(SETTINGS), any = keysDirty || settingsDirty;
-  document.querySelector('[data-tab=tasten]').classList.toggle('dirty', keysDirty);
-  document.querySelector('[data-tab=einst]').classList.toggle('dirty', settingsDirty);
-  all('.save, .discard').forEach(b => b.disabled = !any);
-  all('.dirtynote').forEach(e => e.textContent = any ? 'Ungespeicherte Änderungen' + (keysDirty && settingsDirty ? ' (Tasten und Einstellungen)' : '') : 'Alles gespeichert');
+  document.querySelector('[data-tab=tasten]').classList.toggle('dirty', differs(['map']));
+  document.querySelector('[data-tab=einst]').classList.toggle('dirty', differs(SETTINGS));
+  all('.savebar').forEach(bar => {
+    const changed = differs(bar.dataset.keys.split(','));
+    bar.querySelectorAll('button').forEach(b => b.disabled = !changed);
+    bar.querySelector('.dirtynote').textContent = changed ? 'Ungespeicherte Änderungen' : '';
+  });
 }
 function loadConfig(c) { saved = c; draft = JSON.parse(JSON.stringify(c)); renderConfig(); }
 function renderConfig() {
@@ -437,14 +443,25 @@ function syncLed() {
 for (const [id, kind] of [['ledType','n'],['ledPin','n'],['ledBri','n'],['ledInv','c'],['ledDark','c'],['itv','n'],['stale','n'],['mins','n'],['siri','c']]) {
   $(id).oninput = () => { draft[id] = kind === 'c' ? ($(id).checked ? 1 : 0) : +$(id).value; syncLed(); syncDirty(); };
 }
-all('.discard').forEach(b => b.onclick = () => { draft = JSON.parse(JSON.stringify(saved)); renderConfig(); clearLoaded(); });
-async function saveConfig() {
+const clone = v => JSON.parse(JSON.stringify(v));
+// Speichert nur die genannten Einstellungen (ohne Angabe: alle). Alles andere geht so an den Dongle, wie es
+// dort schon steht – ungespeicherte Änderungen in anderen Abschnitten bleiben als Entwurf erhalten.
+async function saveConfig(keys) {
+  keys = keys || ['map', ...SETTINGS];
+  const value = k => keys.includes(k) ? draft[k] : saved[k];
   const body = new URLSearchParams();
-  draft.map.forEach((a, i) => body.set('m' + i, `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`));
-  for (const k of SETTINGS) body.set(k, draft[k]);
-  try { await post('/api/config', body); saved = null; await refresh(); clearLoaded(); toast('Gespeichert.'); } catch (err) { toast('Fehler: ' + err.message, true); }
+  value('map').forEach((a, i) => body.set('m' + i, `${a.t},${a.t === 1 ? a.m : 0},${a.t ? a.c : 0}`));
+  for (const k of SETTINGS) body.set(k, value(k));
+  try { await post('/api/config', body); } catch (err) { toast('Fehler: ' + err.message, true); return false; }
+  for (const k of keys) saved[k] = clone(draft[k]);
+  syncDirty(); refresh(); toast('Gespeichert.');
+  return true;
 }
-all('.save').forEach(b => b.onclick = saveConfig);
+all('.savebar').forEach(bar => {
+  const keys = bar.dataset.keys.split(',');
+  bar.querySelector('.save').onclick = () => saveConfig(keys);
+  bar.querySelector('.discard').onclick = () => { for (const k of keys) draft[k] = clone(saved[k]); renderConfig(); };
+});
 
 // ---- Tasten -------------------------------------------------------------------------------------
 function renderKeys() {
@@ -612,8 +629,11 @@ $('export').onclick = () => {
   a.download = `siri-bridge-config-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href);
 };
 // Der Speichern-Knopf der Sicherung ist nur aktiv, solange eine geladene Datei auf das Übernehmen wartet.
-function clearLoaded() { $('loaded').hidden = true; $('importsave').disabled = true; }
-$('importsave').onclick = saveConfig;
+let loadedName = '';
+function note(id, text, cls) { const el = $(id); el.textContent = text; el.className = 'loaded' + (cls ? ' ' + cls : ''); el.hidden = !text; }
+$('importsave').onclick = async () => {
+  if (await saveConfig()) { $('importsave').disabled = true; note('loaded', `„${loadedName}“ ist jetzt auf dem Dongle gespeichert.`, 'ok'); }
+};
 $('importbtn').onclick = () => $('import').click();
 $('import').onchange = async e => {
   try {
@@ -622,14 +642,28 @@ $('import').onchange = async e => {
     draft.map.forEach((a, i) => { a.t = +c.map[i].t || 0; a.m = +c.map[i].m || 0; a.c = +c.map[i].c || 0; });
     for (const k of SETTINGS) if (k in c) draft[k] = +c[k] || 0;
     renderConfig();
-    $('loaded').textContent = `Geladen: ${e.target.files[0].name}` + (dirty() ? ' – noch nicht auf dem Dongle.' : ' – entspricht der aktuellen Konfiguration des Dongles.');
-    $('loaded').hidden = false; $('importsave').disabled = false;
+    loadedName = e.target.files[0].name;
+    note('loaded', `„${loadedName}“ geladen` + (dirty() ? ' – noch nicht auf dem Dongle. Mit „Speichern“ übernehmen.' : ' – entspricht der aktuellen Konfiguration des Dongles.'));
+    $('importsave').disabled = false;
     toast('Konfiguration geladen – mit „Speichern“ auf den Dongle übernehmen.');
-  } catch (err) { toast('Das ist keine gültige Konfigurationsdatei.', true); }
+  } catch (err) { $('importsave').disabled = true; note('loaded', `„${e.target.files[0].name}“ ist keine gültige Konfigurationsdatei.`, 'err'); toast('Das ist keine gültige Konfigurationsdatei.', true); }
   e.target.value = '';
 };
 
 // ---- Firmware-Update ----------------------------------------------------------------------------
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Wartet nach einem Update, bis der Dongle wieder antwortet, und meldet das Ergebnis in der Karte.
+async function awaitReboot(before) {
+  await sleep(4000);
+  for (const end = Date.now() + 60000; Date.now() < end; await sleep(1500)) {
+    let s; try { s = await (await fetch('/api/state', {cache:'no-store'})).json(); } catch (e) { continue; }
+    if (s.uptime > 90) continue;  // noch die alte Sitzung
+    if (s.version !== before) { note('fwstatus', `Firmware-Update erfolgreich: ${before} → ${s.version}. Der Dongle läuft wieder.`, 'ok'); toast('Firmware-Update erfolgreich.'); }
+    else note('fwstatus', `Der Dongle läuft wieder, die Version ist unverändert (${s.version}). Entweder war es dieselbe Firmware, oder die neue ist beim Start abgestürzt und wurde verworfen.`);
+    return;
+  }
+  note('fwstatus', 'Der Dongle meldet sich nicht zurück. Hat er eine neue Adresse bekommen, steht sie im Router.', 'err');
+}
 $('fwgo').onclick = () => {
   const file = $('fw').files[0];
   if (!file) return toast('Bitte zuerst eine Datei wählen.', true);
@@ -638,8 +672,15 @@ $('fwgo').onclick = () => {
   $('fwprog').hidden = false; $('fwgo').disabled = true;
   xhr.upload.onprogress = e => { if (e.lengthComputable) $('fwprog').value = e.loaded / e.total * 100; };
   const done = () => { $('fwgo').disabled = false; $('fwprog').hidden = true; };
-  xhr.onload = () => { done(); xhr.status === 200 ? toast('Update eingespielt – der Dongle startet neu.') : toast('Update fehlgeschlagen: ' + xhr.responseText, true); };
-  xhr.onerror = () => { done(); toast('Verbindung abgebrochen.', true); };
+  const before = $('fwver').textContent;
+  note('fwstatus', 'Firmware wird übertragen …');
+  xhr.onload = () => {
+    done();
+    if (xhr.status !== 200) { note('fwstatus', 'Update fehlgeschlagen: ' + xhr.responseText, 'err'); return toast('Update fehlgeschlagen.', true); }
+    note('fwstatus', 'Firmware übertragen. Der Dongle startet jetzt neu und ist in etwa 10 Sekunden wieder erreichbar …');
+    toast('Der Dongle startet neu …'); awaitReboot(before);
+  };
+  xhr.onerror = () => { done(); note('fwstatus', 'Verbindung abgebrochen – das Update wurde nicht eingespielt.', 'err'); toast('Verbindung abgebrochen.', true); };
   xhr.open('POST', '/api/ota'); xhr.send(data);
 };
 

@@ -39,13 +39,14 @@ class Mock:
     def __init__(self) -> None:
         self.started = time.time()
         self.scenario = "connected"
+        self.version = "v0.3.1-dev"
         self.cfg = default_config()
         self.ssid = "Heimnetz-IoT"
         self.net = {"dhcp": True, "ip": "", "mask": "", "gw": "", "dns": ""}
 
     def state(self) -> dict:
         ap = self.scenario == "ap"
-        s = {"version": "v0.2.1-dev", "uptime": int(time.time() - self.started), "heap": 121840,
+        s = {"version": self.version, "uptime": int(time.time() - self.started), "heap": 121840,
              "ble": "connected" if ap else self.scenario,
              "bond": "" if self.scenario == "pairing" else "f0:0d:ca:fe:12:34",
              "wifiMode": "ap" if ap else "sta", "ssid": "siri-bridge-setup" if ap else self.ssid,
@@ -85,8 +86,10 @@ class Mock:
             self.scenario = "connected" if self.ssid else "ap"
         elif path == "/api/unpair":
             self.scenario = "pairing"
-        elif path == "/api/ota":
+        elif path == "/api/ota":  # tut so, als käme der Dongle mit neuer Firmware zurück
             time.sleep(3)
+            self.started = time.time() + 5
+            self.version = "v0.3.2-dev"
         elif path == "/api/factory-reset":
             self.cfg = default_config()
             self.ssid = ""

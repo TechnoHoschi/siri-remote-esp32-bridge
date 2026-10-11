@@ -54,6 +54,9 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 - BOOT-Taste, ausgewertet beim Loslassen: kurz = WLAN ein/aus, 3 s = entkoppeln, 10 s = Werkszustand.
 - **Lizenz MIT-0**, so offen wie möglich.
 - **Tastenwiederholung macht der Host**, nicht die Bridge.
+- **Jede Einstellungskarte hat ihren eigenen Speichern-Knopf** und speichert nur ihre Felder; Entwürfe in
+  anderen Karten bleiben erhalten. Rückmeldungen (Sicherung, Firmware-Update) stehen in der Karte selbst,
+  nicht nur als Einblendung.
 - Die Belegung wird als HID-Usage gespeichert, nicht als Zeichen.
 
 ## Stolperfallen
@@ -76,4 +79,7 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 2. Profile per Dropdown (z. B. „CoreELEC“, „Fire TV“); Fire TV Cube testen.
 3. Langer Tastendruck als zweite Belegung.
 4. Sprache der Weboberfläche umschaltbar (Deutsch/Englisch).
-5. Handy-Ansicht der Weboberfläche testen; Werksreset und „Sicherung laden“ am echten Gerät prüfen.
+5. Erstflash im Browser testen: mit esptool-js und dem merged-Image, nach dem Veröffentlichen auch den
+   Ein-Klick-Installer (GitHub Pages). Vom Projektinhaber am 2026-10-11 zurückgestellt.
+6. Standardbelegung universeller machen (CoreELEC, Android, Fire TV) – der Projektinhaber hat dazu etwas vorbereitet.
+7. Handy-Ansicht der Weboberfläche gezielt durchsehen.
