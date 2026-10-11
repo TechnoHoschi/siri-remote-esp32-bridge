@@ -110,11 +110,6 @@ Das vierte Profil, „Eigenes Profil“, ist eine Kopie von „Universal“ zum 
 gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Wer selbst so ein bewährtes Gespann hat,
 kann mit `tools/key_scan.py` nachsehen, was es sendet. „Android / Fire TV“ ist bisher ungetestet.
 
-**Tipp zur Lautstärke:** Hat man die Remote einmal mit einem Apple TV gekoppelt und dort die Lautstärke des
-Fernsehers eingerichtet, merkt sie sich das. Lauter und Leiser steuern den Fernseher dann weiterhin per
-Infrarot, auch wenn die Remote längst am Dongle hängt. Wem das reicht, der stellt die drei
-Lautstärketasten im Profil auf „nichts“; sonst regeln Fernseher und Mediaplayer gemeinsam.
-
 ## Die Weboberfläche
 
 Beim ersten Start öffnet der Dongle ein eigenes Netz namens `siri-bridge-setup`. Verbinden, die Seite

@@ -111,11 +111,6 @@ The fourth profile, "Eigenes Profil" (custom), starts as a copy of "Universal" f
 keyboard's Menu key and the media "Back" key. If you have such a proven pair yourself, `tools/key_scan.py`
 shows what it sends. "Android / Fire TV" is untested so far.
 
-**A tip on volume:** if the remote was ever paired with an Apple TV and set up there to control your TV's
-volume, it remembers that. Volume up and down keep controlling the TV over infrared, even with the remote
-long since paired to the dongle. If that is all you need, set the three volume buttons to "nothing" in
-your profile; otherwise TV and media player both react.
-
 ## The web interface
 
 On first start the dongle opens its own network called `siri-bridge-setup`. Connect, the page opens
