@@ -90,3 +90,8 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 5. Erstflash im Browser testen: mit esptool-js und dem merged-Image, nach dem Veröffentlichen auch den
    Ein-Klick-Installer (GitHub Pages). Vom Projektinhaber am 2026-10-11 zurückgestellt.
 6. Handy-Ansicht der Weboberfläche gezielt durchsehen.
+7. Infrarot senden als dritte Belegungsart neben Tastatur und Multimedia (z. B. TV-Lautstärke), braucht
+   eine IR-Sendediode am Dongle mit Sicht zum Fernseher. Hintergrund: Die am Apple TV eingerichtete
+   IR-Lautstärke der Remote bleibt nach dem Koppeln mit dem Dongle nicht verlässlich erhalten.
+8. Infrarot empfangen: den Dongle zusätzlich als „besseren Flirc“ nutzen (IR-Fernbedienung → USB-Tastatur,
+   über dieselben Profile). Idee des Projektinhabers, zurückgestellt.

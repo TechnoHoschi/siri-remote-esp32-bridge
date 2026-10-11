@@ -212,6 +212,8 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] **Touchpad:** Wischen als Pfeiltasten, wie am Apple TV
 - [ ] **Fire TV Cube** und andere Android-Geräte testen, die Profile danach nachschärfen
 - [ ] **Langer Tastendruck** als zweite Belegung
+- [ ] **Infrarot senden** als Belegungsart, etwa für die Lautstärke des Fernsehers (braucht eine IR-Diode am Dongle)
+- [ ] **Infrarot empfangen:** nebenbei auch gewöhnliche IR-Fernbedienungen übersetzen, der Dongle als besserer Flirc
 - [ ] **Sprache der Weboberfläche umschaltbar**
 - [ ] Handy-Ansicht der Weboberfläche ordentlich durchtesten
 

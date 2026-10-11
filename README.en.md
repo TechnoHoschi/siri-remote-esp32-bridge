@@ -212,6 +212,8 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] **Touchpad:** swipes as arrow keys, like on an Apple TV
 - [ ] Test the **Fire TV Cube** and other Android devices, then refine the profiles
 - [ ] **Long press** as a second mapping
+- [ ] **Sending infrared** as a mapping type, for TV volume for instance (needs an IR LED on the dongle)
+- [ ] **Receiving infrared:** translate ordinary IR remotes as well, the dongle as a better Flirc
 - [ ] **Switchable language** for the web interface
 - [ ] Properly test the mobile view of the web interface
 
