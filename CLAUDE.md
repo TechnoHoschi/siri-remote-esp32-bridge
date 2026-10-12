@@ -33,7 +33,9 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
 - Ein Serial-Logger darf beim Flashen nicht am Port hängen (`build.sh` beendet `serial_log.py`), und es
   darf immer nur einer laufen – zwei teilen sich die Ausgabe zeichenweise.
 - Updates am laufenden Dongle per OTA: `curl -F firmware=@firmware/dist/…-ota.bin http://<ip>/api/ota`.
-- Release: Tag `vX.Y.Z` pushen, den Rest erledigt der Workflow.
+- Release: Tag `vX.Y.Z` pushen; der Workflow baut, legt das Release an und hängt die Images an (seit v0.6.1
+  erprobt, ca. 4 min). Danach die Notizen mit `gh release edit vX.Y.Z --notes …` auf Deutsch ersetzen. Kein
+  `gh release create` mehr von Hand. Der Installer (GitHub Pages) läuft erst mit öffentlichem Repo.
 - Sprache: Kommentare, Log-Meldungen und README deutsch; Weboberfläche deutsch und englisch; `README.en.md` und `docs/PROTOCOL.md`
   englisch. Die README hat bewusst einen humorvollen Ton. Screenshots in `docs/` (englische in `docs/en/`) stammen aus `ui_snap.py`
   mit erfundenen Adressen.
