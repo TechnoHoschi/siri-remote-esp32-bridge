@@ -120,6 +120,20 @@ der Werksreset löscht es.
 - Kein `node` auf dem Pi: JavaScript der Weboberfläche mit `esprima` aus dem venv auf Syntax prüfen.
 - Browser-Dialoge (`confirm`, `alert`) in der Weboberfläche vermeiden; heikle Knöpfe bestätigen im Knopf.
 
+## Herkunft und Lizenz
+
+- Der Fire TV (Cube/Stick) war von Anfang an das eigentliche Ziel des Projektinhabers, Kodi die Zugabe.
+  Das soll in der README vorn stehen.
+- MIT-0 ist vertretbar, weil kein fremder Code übernommen wurde: Aus azais-corentin/siri-remote (GPL-3.0),
+  Yanndroid/SiriRemote-Linux (ohne Lizenz, also alle Rechte vorbehalten) und zanneth/siriremote stammen nur
+  Protokollwissen (Report-IDs, Tastenbits, Verbindungsparameter), am eigenen Gerät nachgemessen. **Niemals
+  Code aus diesen Projekten kopieren**, auch keine Tabellen im Wortlaut. Die fertigen Images enthalten
+  Arduino-ESP32 (LGPL-2.1) und NimBLE-Arduino (Apache-2.0); das steht im Lizenzabschnitt der README.
+- Siri Remote 2. Generation (A2540): laut Apple/Wikipedia bis auf den Anschluss identisch, Yanndroid bedient
+  beide mit demselben Branch. Ungetestet. `FINGERPRINT` in der Firmware enthält `15 03` – vermutlich die
+  Produktkennung 0x0315 der 3. Generation; eine 2. würde damit beim Koppeln nicht erkannt. Erst mit einem
+  echten Advertising einer 2. Generation ändern, nicht raten.
+
 ## To-do (Reihenfolge des Projektinhabers)
 
 1. Touchpad: Format des Reports `0xFC` entschlüsseln, Wischen als Pfeiltasten. Das Timing muss stimmen.

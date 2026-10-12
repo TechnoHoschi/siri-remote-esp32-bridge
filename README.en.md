@@ -3,10 +3,12 @@
 [🇩🇪 Deutsch](README.md) · 🇬🇧 English
 
 A few-dollar ESP32-S3 that pairs with the **Apple Siri Remote (3rd generation, USB-C)** over Bluetooth
-and shows up on your media player as a perfectly ordinary **USB keyboard**. Built for **Kodi** on
-**CoreELEC** or **LibreELEC**, but it works wherever a keyboard works.
+and shows up on your media player as a perfectly ordinary **USB keyboard**. Built to control a
+**Fire TV** (Cube or Stick) and **Kodi** on **CoreELEC** or **LibreELEC** with Apple's remote; it works
+wherever a keyboard works.
 
-In short: a "Flirc for the Siri Remote". Apple would rather sell you an Apple TV.
+In short: a "Flirc for the Siri Remote". An Apple remote on an Amazon stick. Both manufacturers would
+probably have preferred otherwise.
 
 ![Web interface overview](docs/en/overview.png)
 
@@ -18,8 +20,15 @@ The Siri Remote may be the nicest remote control money can buy, and it talks to 
 this planet. Over infrared it can do volume and power. Everything else goes over Bluetooth LE in a
 dialect that Android, Fire OS and Windows politely ignore.
 
-This dongle speaks that dialect and translates it into the one thing every device has understood since
-1996: key presses.
+There are Linux projects that already speak this dialect (see [Thanks](#thanks)). They just cannot be
+installed in exactly the places where you want the remote: a Fire TV is locked-down Android, so is an
+Android box running Kodi, and CoreELEC and LibreELEC have a read-only system without a package manager.
+Among the common Kodi systems, OSMC with its Debian base is probably the only one where it would work
+directly.
+
+So here the translation lives in a dongle. It speaks the dialect and turns it into the one thing every
+device has understood since 1996: key presses. Nothing gets installed on the media player. The Fire TV
+was the actual goal from the start; Kodi came as a bonus.
 
 ## What it does
 
@@ -46,7 +55,7 @@ Honestly: exactly one dongle, one remote and two media players.
 | Part | Tested with | Note |
 |---|---|---|
 | Board | ESP32-S3 Super Mini (4 MB flash, 2 MB PSRAM) | Other ESP32-S3 boards with a native USB port probably work too; the LED will sit on a different pin (configurable). |
-| Remote | Siri Remote 3rd generation, model A2854 (USB-C) | Older generations speak a different protocol. |
+| Remote | Siri Remote 3rd generation, model A2854 (USB-C) | The 2nd generation (A2540, Lightning) is identical apart from the connector according to Apple and probably talks the same way; untested, and so far the dongle only recognises the 3rd generation's identifier when pairing. The 1st generation (black, glass surface) is a different device. |
 | Media player | Kodi on CoreELEC, Fire TV Cube (Fire OS) | Anything that accepts a USB keyboard should work. |
 | Cable | USB-C | One that carries data. Yes, that needs saying. |
 
@@ -244,6 +253,7 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wish list
 
 - [ ] **Touchpad:** swipes as arrow keys, like on an Apple TV
+- [ ] **Siri Remote 2nd generation** (A2540): if you own one, get in touch – probably only its identifier is missing for pairing
 - [ ] Test other **Android devices** (the Fire TV Cube is covered) and refine the "Android / Fire TV" profile
 - [ ] **Long press** as a second mapping
 - [ ] **Sending infrared** as a mapping type, for TV volume for instance (needs an IR LED on the dongle)
@@ -268,6 +278,9 @@ way and then got it back out again.
 [MIT No Attribution](LICENSE): do whatever you like with it, no credit required. The prebuilt firmware
 images additionally contain the ESP32 Arduino core (LGPL-2.1) and NimBLE-Arduino (Apache-2.0), which
 remain under their own licenses.
+
+From the projects listed under [Thanks](#thanks) we took knowledge about the protocol, re-measured on our
+own remote, but no code.
 
 Apple, Siri and Apple TV are trademarks of Apple Inc. This project has nothing to do with Apple, other
 than being rather fond of one of their remotes.

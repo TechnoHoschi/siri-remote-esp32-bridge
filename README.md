@@ -3,10 +3,12 @@
 🇩🇪 Deutsch · [🇬🇧 English](README.en.md)
 
 Ein ESP32-S3 für ein paar Euro, der die **Apple Siri Remote (3. Generation, USB-C)** per Bluetooth
-koppelt und sich am Mediaplayer als ganz gewöhnliche **USB-Tastatur** ausgibt. Gedacht für **Kodi** auf
-**CoreELEC** oder **LibreELEC**, funktioniert aber überall, wo eine Tastatur funktioniert.
+koppelt und sich am Mediaplayer als ganz gewöhnliche **USB-Tastatur** ausgibt. Gebaut, um einen
+**Fire TV** (Cube oder Stick) und **Kodi** auf **CoreELEC** oder **LibreELEC** mit der Apple-Fernbedienung
+zu bedienen; funktioniert aber überall, wo eine Tastatur funktioniert.
 
-Kurz: ein „Flirc für die Siri Remote“. Apple verkauft dafür lieber ein Apple TV.
+Kurz: ein „Flirc für die Siri Remote“. Eine Apple-Fernbedienung an einem Amazon-Stick. Beide Hersteller
+hätten das vermutlich lieber anders.
 
 ![Übersicht der Weboberfläche](docs/uebersicht.png)
 
@@ -16,8 +18,15 @@ Die Siri Remote ist die vielleicht angenehmste Fernbedienung, die man kaufen kan
 exakt einem Gerät auf diesem Planeten. Per Infrarot kann sie Lautstärke und Power, alles andere geht
 über Bluetooth LE in einem Dialekt, den Android, Fire OS und Windows höflich ignorieren.
 
-Der Dongle spricht diesen Dialekt und übersetzt ihn in das Einzige, was wirklich jedes Gerät seit
-1996 versteht: Tastendrücke.
+Für Linux gibt es bereits Projekte, die diesen Dialekt sprechen (siehe [Dank](#dank)). Nur lassen sie sich
+genau dort nicht installieren, wo man die Fernbedienung haben will: Ein Fire TV ist Android und zugenagelt,
+eine Android-Box mit Kodi ebenso, und CoreELEC und LibreELEC haben ein schreibgeschütztes System ohne
+Paketverwaltung. Von den verbreiteten Kodi-Systemen dürfte OSMC mit seinem Debian-Unterbau das einzige
+sein, auf dem es direkt ginge.
+
+Deshalb sitzt die Übersetzung hier in einem Dongle. Er spricht den Dialekt und macht daraus das Einzige,
+was wirklich jedes Gerät seit 1996 versteht: Tastendrücke. Auf dem Mediaplayer wird nichts installiert.
+Der Fire TV war von Anfang an das eigentliche Ziel, Kodi kam als Zugabe.
 
 ## Was er kann
 
@@ -45,7 +54,7 @@ Ehrlicherweise: mit genau einem Dongle, einer Remote und zwei Mediaplayern.
 | Teil | Getestet mit | Anmerkung |
 |---|---|---|
 | Board | ESP32-S3 Super Mini (4 MB Flash, 2 MB PSRAM) | Andere ESP32-S3-Boards mit nativem USB-Port gehen vermutlich auch; die LED sitzt dann woanders (einstellbar). |
-| Remote | Siri Remote 3. Generation, Modell A2854 (USB-C) | Ältere Generationen sprechen ein anderes Protokoll. |
+| Remote | Siri Remote 3. Generation, Modell A2854 (USB-C) | Die 2. Generation (A2540, Lightning) ist laut Apple bis auf den Anschluss baugleich und funkt vermutlich genauso; ungetestet, und der Dongle erkennt beim Koppeln bisher nur die Kennung der 3. Die 1. Generation (schwarz, Glasfläche) ist ein anderes Gerät. |
 | Mediaplayer | Kodi auf CoreELEC, Fire TV Cube (Fire OS) | Alles, was eine USB-Tastatur annimmt, sollte gehen. |
 | Kabel | USB-C | Eines, das Daten kann. Ja, das muss man dazusagen. |
 
@@ -245,6 +254,7 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wunschliste
 
 - [ ] **Touchpad:** Wischen als Pfeiltasten, wie am Apple TV
+- [ ] **Siri Remote der 2. Generation** (A2540): Wer eine hat, bitte melden – vermutlich fehlt nur ihre Kennung beim Koppeln
 - [ ] Andere **Android-Geräte** testen (Fire TV Cube ist erprobt), das Profil „Android / Fire TV“ nachschärfen
 - [ ] **Langer Tastendruck** als zweite Belegung
 - [ ] **Infrarot senden** als Belegungsart, etwa für die Lautstärke des Fernsehers (braucht eine IR-Diode am Dongle)
@@ -269,6 +279,9 @@ geschickt und ihn anschließend wieder herausgeholt hat.
 [MIT No Attribution](LICENSE): Mach damit, was du willst, auch ohne uns zu erwähnen. Die fertigen
 Firmware-Images enthalten außerdem den ESP32-Arduino-Core (LGPL-2.1) und NimBLE-Arduino (Apache-2.0),
 für die deren Lizenzen gelten.
+
+Aus den unter [Dank](#dank) genannten Projekten stammt Wissen über das Protokoll, das wir an der eigenen
+Remote nachgemessen haben, aber kein Code.
 
 Apple, Siri und Apple TV sind Marken von Apple Inc. Dieses Projekt hat mit Apple nichts zu tun, außer
 dass es eine ihrer Fernbedienungen ziemlich mag.
