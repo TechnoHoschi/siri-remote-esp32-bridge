@@ -97,18 +97,22 @@ and renamed.
 | Remote | Universal (default) | Kodi (CoreELEC) | Android / Fire TV |
 |---|---|---|---|
 | Ring up / right / down / left | Arrow keys | Arrow keys | Arrow keys |
-| Clickpad centre | Enter | Enter | Enter |
+| Clickpad centre | Media "OK" | Enter | Media "OK" |
 | Back | Media "Back" | Backspace | Media "Back" |
 | Home/TV | Menu key | C (context menu) | Media "Home" |
 | Play/Pause | Media "Play/Pause" | Space | Media "Play/Pause" |
 | Power | S (shutdown menu in Kodi) | S | nothing |
 | Volume up / down / Mute | Media keys | Media keys | Media keys |
-| Siri | nothing | nothing | nothing |
+| Siri | Media "Search" | nothing | Media "Search" |
 
 The fourth profile, "Eigenes Profil" (custom), starts as a copy of "Universal" for tinkering.
 
 "Universal" was copied from a remote that works on both Fire TV and CoreELEC through a Flirc dongle: the
-keyboard's Menu key and the media "Back" key. If you have such a proven pair yourself, `tools/key_scan.py`
+keyboard's Menu key and the media "Back" key. The clickpad centre sends a remote control's OK key there
+instead of Enter, because Android does not open the on-screen keyboard in a search field on Enter. The Siri button
+sends "Search": that opens the search in apps such as YouTube, while nothing happens on the Fire TV home
+screen. Voice search cannot be triggered there by a USB key; "Sprachassistent" (voice assistant) is still
+available in the list for other Android devices. If you have such a proven pair yourself, `tools/key_scan.py`
 shows what it sends. "Universal" has been tried on a CoreELEC box and a Fire TV; "Android / Fire TV" is
 untested so far.
 

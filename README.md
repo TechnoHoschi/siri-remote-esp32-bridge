@@ -96,18 +96,22 @@ umbelegen und umbenennen.
 | Remote | Universal (Standard) | Kodi (CoreELEC) | Android / Fire TV |
 |---|---|---|---|
 | Ring oben / rechts / unten / links | Pfeiltasten | Pfeiltasten | Pfeiltasten |
-| Clickpad-Mitte | Enter | Enter | Enter |
+| Clickpad-Mitte | Multimedia „OK“ | Enter | Multimedia „OK“ |
 | Zurück | Multimedia „Zurück“ | Backspace | Multimedia „Zurück“ |
 | Home/TV | Menütaste | C (Kontextmenü) | Multimedia „Home“ |
 | Play/Pause | Multimedia „Play/Pause“ | Leertaste | Multimedia „Play/Pause“ |
 | Power | S (Shutdown-Menü in Kodi) | S | nichts |
 | Lauter / Leiser / Mute | Multimedia-Tasten | Multimedia-Tasten | Multimedia-Tasten |
-| Siri | nichts | nichts | nichts |
+| Siri | Multimedia „Suche“ | nichts | Multimedia „Suche“ |
 
 Das vierte Profil, „Eigenes Profil“, ist eine Kopie von „Universal“ zum Verbasteln.
 
 „Universal“ ist bei einer Fernbedienung abgeschaut, die über einen Flirc-Dongle an Fire TV und CoreELEC
-gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Wer selbst so ein bewährtes Gespann hat,
+gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Die Clickpad-Mitte sendet dort die
+OK-Taste einer Fernbedienung statt Enter, weil Android mit Enter in einem Suchfeld keine Bildschirmtastatur
+öffnet. Die Siri-Taste sendet „Suche“: Das öffnet in Apps wie YouTube die Suche, auf dem Startbildschirm
+des Fire TV passiert nichts. Eine Sprachsuche lässt sich dort per USB-Taste nicht auslösen; „Sprachassistent“
+steht für andere Android-Geräte trotzdem zur Auswahl. Wer selbst so ein bewährtes Gespann hat,
 kann mit `tools/key_scan.py` nachsehen, was es sendet. „Universal“ ist an einer CoreELEC-Box und einem
 Fire TV erprobt; „Android / Fire TV“ ist bisher ungetestet.
 

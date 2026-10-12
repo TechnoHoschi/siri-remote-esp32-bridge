@@ -25,7 +25,7 @@ KEYS = {
     57: ("Leertaste", "K", 0x2C), 102: ("Pos1", "K", 0x4A), 107: ("Ende", "K", 0x4D), 104: ("Bild auf", "K", 0x4B),
     109: ("Bild ab", "K", 0x4E), 110: ("Einfg", "K", 0x49), 111: ("Entf", "K", 0x4C), 103: ("Pfeil hoch", "K", 0x52),
     108: ("Pfeil runter", "K", 0x51), 105: ("Pfeil links", "K", 0x50), 106: ("Pfeil rechts", "K", 0x4F),
-    127: ("Menütaste", "K", 0x65), 12: ("-", "K", 0x2D), 13: ("=", "K", 0x2E),
+    127: ("Menütaste", "K", 0x65), 96: ("Enter (Ziffernblock)", "K", 0x58), 353: ("OK (Steuerkreuz)", "C", 0x41), 582: ("Sprachassistent", "C", 0xCF), 12: ("-", "K", 0x2D), 13: ("=", "K", 0x2E),
     113: ("Stumm", "C", 0xE2), 114: ("Leiser", "C", 0xEA), 115: ("Lauter", "C", 0xE9), 164: ("Play/Pause", "C", 0xCD),
     207: ("Play", "C", 0xB0), 119: ("Pause", "C", 0xB1), 166: ("Stop", "C", 0xB7), 163: ("Nächster Titel", "C", 0xB5),
     165: ("Vorheriger Titel", "C", 0xB6), 208: ("Vorspulen", "C", 0xB3), 168: ("Zurückspulen", "C", 0xB4),

@@ -23,12 +23,12 @@ INDEX = pathlib.Path(__file__).resolve().parent.parent / "firmware/siri_bridge/w
 BUTTONS = ["Home/TV", "Vol+", "Vol-", "Click", "Power", "Siri", "Back", "Mute", "Play/Pause", "Up", "Right", "Down", "Left"]
 # Die mitgelieferten Profile, wie in firmware/siri_bridge/config.h (builtinProfile)
 ARROWS = [(1, 0x52), (1, 0x4F), (1, 0x51), (1, 0x50)]
-VOL_UP, VOL_DOWN, MUTE, NONE, ENTER, KEY_S = (2, 0xE9), (2, 0xEA), (2, 0xE2), (0, 0), (1, 0x28), (1, 0x16)
+VOL_UP, VOL_DOWN, MUTE, NONE, ENTER, KEY_S, OK, SEARCH = (2, 0xE9), (2, 0xEA), (2, 0xE2), (0, 0), (1, 0x28), (1, 0x16), (2, 0x41), (2, 0x221)
 BUILTIN = [
-    ("Universal", [(1, 0x65), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Universal", [(1, 0x65), VOL_UP, VOL_DOWN, OK, KEY_S, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
     ("Kodi (CoreELEC)", [(1, 0x06), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (1, 0x2A), MUTE, (1, 0x2C)] + ARROWS),
-    ("Android / Fire TV", [(2, 0x223), VOL_UP, VOL_DOWN, ENTER, NONE, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
-    ("Eigenes Profil", [(1, 0x65), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Android / Fire TV", [(2, 0x223), VOL_UP, VOL_DOWN, OK, NONE, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Eigenes Profil", [(1, 0x65), VOL_UP, VOL_DOWN, OK, KEY_S, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
 ]
 
 

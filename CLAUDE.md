@@ -62,7 +62,13 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 - **Vier Belegungsprofile** (`config.h`, `builtinProfile()`): „Universal“ (Standard), „Kodi (CoreELEC)“,
   „Android / Fire TV“ (ungetestet), „Eigenes Profil“. „Universal“ übernimmt Menü (Tastatur `0x65`) und
   Zurück (Consumer `0x224`) von einem Flirc-Dongle des Projektinhabers, der an Fire TV und CoreELEC
-  funktioniert (am 2026-10-11 mit `tools/key_scan.py` ausgelesen). Die Vorgaben stehen doppelt: in der
+  funktioniert (am 2026-10-11 mit `tools/key_scan.py` ausgelesen). Clickpad-Mitte sendet in „Universal“
+  und „Android / Fire TV“ die Fernbedienungs-OK-Taste (Consumer `0x41` „Menu Pick“, Android: `DPAD_CENTER`)
+  statt Enter: Mit Enter öffnet Android in einem Suchfeld keine Bildschirmtastatur. Am 2026-10-12 vom
+  Projektinhaber an Fire TV (Suchfeld) und CoreELEC (auch langes OK) bestätigt. Die Siri-Taste sendet dort
+  „Suche“ (Consumer `0x221`): öffnet in YouTube die Suche, auf dem Fire-TV-Startbildschirm nichts.
+  „Sprachassistent“ (Consumer `0xCF`, Android: `VOICE_ASSIST`) bewirkt am Fire TV nichts; laut Amazon-Doku
+  sendet die Mikrofontaste der Originalfernbedienung gar kein Tastenereignis. Die Vorgaben stehen doppelt: in der
   Firmware und in `tools/ui_dev.py` – beide zusammen ändern.
 - Ein Wechsel des Einstellungsformats (`CONFIG_VERSION`) setzt die Einstellungen auf Vorgabe zurück;
   Kopplung und WLAN bleiben.

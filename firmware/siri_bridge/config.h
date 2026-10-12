@@ -55,24 +55,30 @@ static const Action A_ENTER = {ACTION_KEY, 0, 0x28}, A_BACKSPACE = {ACTION_KEY, 
 static const Action A_KEY_C = {ACTION_KEY, 0, 0x06}, A_KEY_S = {ACTION_KEY, 0, 0x16}, A_KEY_MENU = {ACTION_KEY, 0, 0x65};
 static const Action A_VOL_UP = {ACTION_CONSUMER, 0, 0xE9}, A_VOL_DOWN = {ACTION_CONSUMER, 0, 0xEA}, A_MUTE = {ACTION_CONSUMER, 0, 0xE2};
 static const Action A_PLAY_PAUSE = {ACTION_CONSUMER, 0, 0xCD}, A_AC_HOME = {ACTION_CONSUMER, 0, 0x223}, A_AC_BACK = {ACTION_CONSUMER, 0, 0x224};
+// „Menu Pick“: die OK-Taste einer Fernbedienung. Android macht daraus DPAD_CENTER; anders als Enter öffnet sie
+// in einem Suchfeld die Bildschirmtastatur.
+static const Action A_OK = {ACTION_CONSUMER, 0, 0x41};
+// „AC Search“: öffnet in Android-Apps die Suche (z. B. YouTube). Vorgabe für die Siri-Taste.
+static const Action A_SEARCH = {ACTION_CONSUMER, 0, 0x221};
 
 // Die mitgelieferten Profile. Reihenfolge der Aktionen wie BUTTON_NAMES:
 //   Home/TV, Vol+, Vol-, Click, Power, Siri, Back, Mute, Play/Pause, Up, Right, Down, Left
 static Profile builtinProfile(uint8_t index) {
   static const Profile BUILTIN[PROFILE_COUNT] = {
     // Für Kodi und Android zugleich. Menü- und Zurück-Taste so, wie sie ein Flirc-Dongle sendet, der an
-    // Fire TV und CoreELEC gleichermaßen funktioniert: Menütaste der Tastatur und „AC Back“.
+    // Fire TV und CoreELEC gleichermaßen funktioniert: Menütaste der Tastatur und „AC Back“. Die Mitte des
+    // Clickpads sendet die OK-Taste einer Fernbedienung („Menu Pick“) statt Enter. Siri öffnet die Suche.
     {"Universal",
-     {A_KEY_MENU, A_VOL_UP, A_VOL_DOWN, A_ENTER, A_KEY_S, A_NONE, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
+     {A_KEY_MENU, A_VOL_UP, A_VOL_DOWN, A_OK, A_KEY_S, A_SEARCH, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
     // Kodis eigene Tastaturbelegung: Backspace = zurück, C = Kontextmenü, Leertaste = Play/Pause, S = Shutdown-Menü.
     {"Kodi (CoreELEC)",
      {A_KEY_C, A_VOL_UP, A_VOL_DOWN, A_ENTER, A_KEY_S, A_NONE, A_BACKSPACE, A_MUTE, A_SPACE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
     // Android-Oberfläche: Home/TV führt zum Startbildschirm. Ungetestet.
     {"Android / Fire TV",
-     {A_AC_HOME, A_VOL_UP, A_VOL_DOWN, A_ENTER, A_NONE, A_NONE, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
+     {A_AC_HOME, A_VOL_UP, A_VOL_DOWN, A_OK, A_NONE, A_SEARCH, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
     // Freier Platz zum Ausprobieren, anfangs eine Kopie von „Universal“.
     {"Eigenes Profil",
-     {A_KEY_MENU, A_VOL_UP, A_VOL_DOWN, A_ENTER, A_KEY_S, A_NONE, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
+     {A_KEY_MENU, A_VOL_UP, A_VOL_DOWN, A_OK, A_KEY_S, A_SEARCH, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
   };
   return BUILTIN[index < PROFILE_COUNT ? index : 0];
 }
