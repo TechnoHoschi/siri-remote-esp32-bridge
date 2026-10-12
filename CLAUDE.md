@@ -90,6 +90,14 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 ## To-do (Reihenfolge des Projektinhabers)
 
 1. Touchpad: Format des Reports `0xFC` entschlüsseln, Wischen als Pfeiltasten. Das Timing muss stimmen.
+   Stand 2026-10-12: Ein Finger = 11 Byte; ab Byte 4 X und Y als 12 Bit mit Vorzeichen (wie Magic Mouse:
+   `x = b4 | (b5 & 0x0F) << 8`, `y = b5 >> 4 | b6 << 4`, Y nach oben positiv), Bereich je rund 1280 Einheiten,
+   Mitte etwa (−285, −365); Zustand in den unteren 3 Bit von Byte 10 (3 aufgesetzt, 4 liegt auf, 5–7 hebt
+   ab, 0 weg); zwei Finger = 18 Byte. Am ESP ein Report je 15 ms. Rohdaten: `archiv/2026-10-12-touch-esp.log`.
+   Branch `touch-maus` enthält einen Prototyp hinter Bauschaltern (`-DTOUCH_LOG`, `-DTOUCH_MOUSE`: Touchfläche
+   als USB-Maus, Siri 0,7 s halten schaltet um). Vom Projektinhaber vertagt, er überlegt noch, was davon
+   sinnvoll ist; am PC ungetestet. Wunsch: Siri lang = Mausmodus, dann braucht das WLAN-Umschalten eine
+   andere Taste.
 2. „Android / Fire TV“-Profil testen und nachschärfen. („Universal“ ist vom Projektinhaber am 2026-10-11 an
    CoreELEC-Box und Fire TV bestätigt: funktioniert einwandfrei.)
 3. Langer Tastendruck als zweite Belegung.
