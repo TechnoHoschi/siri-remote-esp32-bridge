@@ -36,21 +36,22 @@ This dongle speaks that dialect and translates it into the one thing every devic
 
 - **Touchpad swipes.** The remote sends the data; so far we only use the clicks. Top of the wish list.
 - **Siri.** The microphone is never subscribed to. Nobody is listening. Promise.
-- **Fire TV.** Should work, but is untested; see the [wish list](#wish-list).
-- **Passwords.** More on that below.
+- **Voice search on Fire TV.** A USB keyboard cannot trigger it, and neither can this one.
+- **Passwords.** More on that below, including one sentence meant seriously.
 
 ## What it was tested with
 
-Honestly: exactly one setup.
+Honestly: exactly one dongle, one remote and two media players.
 
 | Part | Tested with | Note |
 |---|---|---|
 | Board | ESP32-S3 Super Mini (4 MB flash, 2 MB PSRAM) | Other ESP32-S3 boards with a native USB port probably work too; the LED will sit on a different pin (configurable). |
 | Remote | Siri Remote 3rd generation, model A2854 (USB-C) | Older generations speak a different protocol. |
-| Media player | Kodi on CoreELEC | Anything that accepts a USB keyboard should work. |
+| Media player | Kodi on CoreELEC, Fire TV Cube (Fire OS) | Anything that accepts a USB keyboard should work. |
 | Cable | USB-C | One that carries data. Yes, that needs saying. |
 
-If you try it with something else, feedback is welcome, either way.
+If you try it with something else, feedback is welcome, either way – ideally as an
+[issue](../../issues/new/choose); there is a template for it.
 
 ## Installing
 
@@ -172,6 +173,10 @@ button or upload different firmware. If you consider that a realistic scenario i
 room, set "turn Wi-Fi off automatically" to a few minutes, and the web interface only exists at the
 push of a button. Everyone else can keep a sense of proportion.
 
+One sentence without the wink: this holds for your own home network. On a network you share with
+strangers (shared flat, dorm, hotel, office), anyone there can replace the dongle's firmware. In that case
+turn Wi-Fi off after setup (short press on BOOT) and only turn it back on when needed.
+
 ## Updates and rollback
 
 Firmware updates arrive as `…-ota.bin` through the web interface. Pairing and settings survive.
@@ -232,7 +237,7 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wish list
 
 - [ ] **Touchpad:** swipes as arrow keys, like on an Apple TV
-- [ ] Test the **Fire TV Cube** and other Android devices, then refine the profiles
+- [ ] Test other **Android devices** (the Fire TV Cube is covered) and refine the "Android / Fire TV" profile
 - [ ] **Long press** as a second mapping
 - [ ] **Sending infrared** as a mapping type, for TV volume for instance (needs an IR LED on the dongle)
 - [ ] **Receiving infrared:** translate ordinary IR remotes as well, the dongle as a better Flirc
@@ -248,7 +253,7 @@ Without the groundwork of these projects this would have taken considerably long
 - [zanneth/siriremote](https://code.zanneth.com/zanneth/siriremote) – Linux client
 - [h2zero/NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) – the BLE stack
 
-Built over two days in dialogue with Claude Code, which sent the ESP into a boot loop once along the
+Built over a few days in dialogue with Claude Code, which sent the ESP into a boot loop once along the
 way and then got it back out again.
 
 ## License

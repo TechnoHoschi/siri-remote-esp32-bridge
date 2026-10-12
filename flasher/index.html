@@ -1,52 +1,96 @@
 <!doctype html>
-<html lang="de">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
 <title>Siri Remote ESP32 Bridge – Installer</title>
 <style>
   :root { color-scheme: light dark; }
   body { margin: 0; padding: 40px 20px; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 640px; margin: 0 auto; }
+  header { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
   h1 { font-size: 28px; margin: 0 0 6px; }
   .sub { opacity: .7; margin: 0 0 28px; }
   ol { padding-left: 22px; } li { margin: 8px 0; }
   .box { border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 12px; padding: 18px 20px; margin: 24px 0; }
   .small { font-size: 14px; opacity: .75; }
-  hr { border: 0; border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); margin: 34px 0; }
+  .langs { display: inline-flex; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: 99px; overflow: hidden; flex: none; margin-top: 6px; }
+  .langs button { font: inherit; font-size: 12px; font-weight: 600; line-height: 1; padding: 7px 11px; border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; }
+  .langs button[aria-pressed=true] { background: #1f6fd6; color: #fff; opacity: 1; }
+  .go { font: inherit; padding: 10px 22px; border-radius: 8px; border: 0; background: #1f6fd6; color: #fff; font-weight: 600; cursor: pointer; }
 </style>
 <script type="module" src="https://unpkg.com/esp-web-tools@10.1.1/dist/web/install-button.js?module"></script>
 </head>
 <body>
 <main>
-  <h1>Siri Remote ESP32 Bridge</h1>
-  <p class="sub">Firmware <span id="version">…</span> direkt aus dem Browser auf den ESP32-S3 spielen.</p>
+  <header>
+    <h1>Siri Remote ESP32 Bridge</h1>
+    <div class="langs" id="langs"></div>
+  </header>
+  <p class="sub" data-i18n="sub"></p>
 
   <ol>
-    <li>ESP32-S3 per USB an diesen Rechner stecken – mit einem Kabel, das Daten kann.</li>
-    <li>Auf „Installieren“ klicken und den Anschluss des ESP auswählen.</li>
-    <li>Warten, bis der Balken durch ist. Danach den ESP an den Mediaplayer stecken.</li>
+    <li data-i18n="step1"></li>
+    <li data-i18n="step2"></li>
+    <li data-i18n="step3"></li>
+    <li data-i18n="step4"></li>
   </ol>
 
   <div class="box">
     <esp-web-install-button manifest="manifest.json">
-      <button slot="activate" style="font:inherit;padding:10px 22px;border-radius:8px;border:0;background:#1f6fd6;color:#fff;font-weight:600;cursor:pointer">Installieren</button>
-      <span slot="unsupported">Dieser Browser kann keine USB-Geräte ansprechen. Bitte Chrome oder Edge auf einem Rechner verwenden.</span>
-      <span slot="not-allowed">Die Installation braucht eine HTTPS-Seite.</span>
+      <button slot="activate" class="go" data-i18n="install"></button>
+      <span slot="unsupported" data-i18n="unsupported"></span>
+      <span slot="not-allowed" data-i18n="notallowed"></span>
     </esp-web-install-button>
   </div>
 
-  <p class="small">Die Installation löscht den gesamten Flash des ESP, also auch eine bestehende Kopplung und alle Einstellungen.
-    Für Updates eines laufenden Dongles lieber die <b>…-ota.bin</b> aus dem Release über dessen Weboberfläche einspielen.</p>
-  <p class="small">Geht der ESP nicht von selbst in den Flash-Modus: BOOT gedrückt halten, RESET kurz tippen, BOOT loslassen, dann erneut auf „Installieren“.</p>
-
-  <hr>
-  <p class="small"><b>English:</b> Plug the ESP32-S3 into this computer, click the button above and pick its serial port.
-    Installing erases the whole flash, including pairing and settings. Needs Chrome or Edge on a desktop.
-    If the ESP does not enter flash mode by itself: hold BOOT, tap RESET, release BOOT, try again.</p>
+  <p class="small" data-i18n="erase"></p>
+  <p class="small" data-i18n="failed"></p>
 </main>
 <script>
-  fetch('manifest.json').then(r => r.json()).then(m => document.getElementById('version').textContent = m.version).catch(() => {});
+  // Zwei Sprachen direkt in der Seite; gewählt wird die im Browser gespeicherte, sonst die Browsersprache, sonst Englisch.
+  const TEXT = {
+    de: {
+      sub: 'Firmware {version} direkt aus dem Browser auf den ESP32-S3 spielen.',
+      step1: 'ESP32-S3 per USB an diesen Rechner stecken – mit einem Kabel, das Daten kann.',
+      step2: 'Den ESP in den Flash-Modus bringen: <b>BOOT halten, RESET kurz tippen, BOOT loslassen</b> (oder BOOT beim Einstecken halten). Die LED bleibt dabei dunkel.',
+      step3: 'Auf „Installieren“ klicken und den Anschluss des ESP auswählen („USB JTAG/serial debug unit“).',
+      step4: 'Warten, bis der Balken durch ist. Dann den ESP einmal ab- und am Mediaplayer wieder anstecken.',
+      install: 'Installieren',
+      unsupported: 'Dieser Browser kann keine USB-Geräte ansprechen. Bitte Chrome oder Edge auf einem Rechner verwenden.',
+      notallowed: 'Die Installation braucht eine HTTPS-Seite.',
+      erase: 'Die Installation löscht den gesamten Flash des ESP, also auch eine bestehende Kopplung und alle Einstellungen. Für Updates eines laufenden Dongles lieber die <b>…-ota.bin</b> aus dem Release über dessen Weboberfläche einspielen.',
+      failed: 'Meldet der Installer, er könne sich nicht verbinden, ist der ESP nicht im Flash-Modus: Schritt 2 wiederholen und erneut auf „Installieren“ klicken.',
+    },
+    en: {
+      sub: 'Flash firmware {version} onto the ESP32-S3 straight from the browser.',
+      step1: 'Plug the ESP32-S3 into this computer via USB – with a cable that carries data.',
+      step2: 'Put the ESP into flash mode: <b>hold BOOT, tap RESET, release BOOT</b> (or hold BOOT while plugging in). The LED stays dark.',
+      step3: 'Click “Install” and pick the ESP\'s serial port (“USB JTAG/serial debug unit”).',
+      step4: 'Wait for the progress bar to finish. Then unplug the ESP and plug it into your media player.',
+      install: 'Install',
+      unsupported: 'This browser cannot talk to USB devices. Please use Chrome or Edge on a desktop computer.',
+      notallowed: 'Installing requires an HTTPS page.',
+      erase: 'Installing erases the whole flash of the ESP, including an existing pairing and all settings. To update a running dongle, upload the <b>…-ota.bin</b> from the release through its web interface instead.',
+      failed: 'If the installer says it cannot connect, the ESP is not in flash mode: repeat step 2 and click “Install” again.',
+    },
+  };
+  let version = '…', lang = '';
+  try { lang = localStorage.getItem('lang') || ''; } catch (e) {}
+  if (!TEXT[lang]) lang = (navigator.languages || [navigator.language || '']).map(l => l.slice(0, 2).toLowerCase()).find(l => TEXT[l]) || 'en';
+  function paint() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(e => e.innerHTML = TEXT[lang][e.dataset.i18n].replace('{version}', version));
+    document.querySelectorAll('#langs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+  }
+  for (const code of Object.keys(TEXT)) {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.lang = code; b.textContent = code.toUpperCase();
+    b.onclick = () => { lang = code; try { localStorage.setItem('lang', code); } catch (e) {} paint(); };
+    document.getElementById('langs').append(b);
+  }
+  paint();
+  fetch('manifest.json').then(r => r.json()).then(m => { version = m.version; paint(); }).catch(() => {});
 </script>
 </body>
 </html>

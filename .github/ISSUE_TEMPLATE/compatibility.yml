@@ -1,0 +1,54 @@
+name: "It works / Es läuft (compatibility report)"
+description: "Tell us which board, remote and media player you tried – also when everything works. / Womit du es ausprobiert hast – auch wenn alles klappt."
+title: "Compatibility: "
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: "English or German, whichever you prefer. / Deutsch oder Englisch, wie es dir lieber ist."
+  - type: input
+    id: board
+    attributes:
+      label: "Board"
+      description: "Exact name, flash and PSRAM size if known. / Genaue Bezeichnung, Flash- und PSRAM-Größe, falls bekannt."
+      placeholder: "ESP32-S3 Super Mini, 4 MB flash, 2 MB PSRAM"
+    validations:
+      required: true
+  - type: input
+    id: remote
+    attributes:
+      label: "Remote"
+      description: "Model number from the back. / Modellnummer von der Rückseite."
+      placeholder: "Siri Remote 3rd gen, A2854 (USB-C)"
+    validations:
+      required: true
+  - type: input
+    id: player
+    attributes:
+      label: "Media player and software / Mediaplayer und Software"
+      placeholder: "CoreELEC 21 on …, Fire TV Stick 4K Max, Nvidia Shield …"
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: "Firmware version"
+      description: "Shown at the top right of the web interface. / Steht oben rechts in der Weboberfläche."
+      placeholder: "v0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: "Result / Ergebnis"
+      options:
+        - "Everything works / Alles funktioniert"
+        - "Works with limitations / Funktioniert mit Einschränkungen"
+        - "Does not work / Funktioniert nicht"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Notes / Anmerkungen"
+      description: "Which profile, which buttons behave differently, LED pin of your board … / Welches Profil, welche Tasten sich anders verhalten, LED-Pin deines Boards …"

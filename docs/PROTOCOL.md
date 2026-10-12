@@ -74,7 +74,7 @@ Reference descriptor (`0x2908`), so never hard-code handles.
 |---|---|---|
 | `0xFA` | Input | Microphone audio (Opus), only while the Siri button is held |
 | `0xFB` | Input | ✅ Buttons: 2-byte little-endian bit mask |
-| `0xFC` | Input | Touchpad (11 bytes for one finger observed; 18 bytes for two fingers according to other projects) |
+| `0xFC` | Input | ✅ Touchpad: 11 bytes for one finger, 18 bytes for two (see below) |
 | `0x60`, `0xFD`, `0xFE` | Input | Unknown, no data seen |
 | `0xF0`, `0xF1` | Feature | Unknown |
 
@@ -100,6 +100,27 @@ Button reports arrive on a 15 ms grid, matching the connection interval.
 While it is not connected, the remote buffers key presses and delivers them after the next connection –
 several of them, even from hours earlier. They arrive as a burst right after connecting, press and
 release only about 15 ms apart. A bridge has to decide whether to drop them.
+
+### Touchpad (`0xFC`)
+
+Measured on the ESP32-S3 with one finger, sweeping the whole surface (322 reports). The decoding below
+gives smooth tracks without outliers; it follows the layout of Apple's Magic Mouse touch data. Bytes 0–3
+(first byte always `0x32`, then a counter-like value) and the two-finger layout are not decoded yet.
+
+| Bytes | Content |
+|---|---|
+| 4, 5 (low nibble) | X, 12 bit signed: `x = b4 \| (b5 & 0x0F) << 8`; left ≈ −960, right ≈ +320 |
+| 5 (high nibble), 6 | Y, 12 bit signed: `y = b5 >> 4 \| b6 << 4`; **up is positive**: bottom ≈ −985, top ≈ +290 |
+| 7, 8 | Presumably contact size (major / minor axis); not needed for tracking |
+| 10 (low 3 bits) | State: 3 = touch down, 4 = touching, 5–7 = lifting, 0 = gone |
+
+- The usable range is about 1280 units on each axis. The origin is not in the middle: a tap on the centre
+  reads roughly (−285, −365). For relative movement only the differences matter.
+- While a finger rests on the pad, one report arrives per connection interval: every 15 ms, about 66 per
+  second. Between touches nothing is sent.
+- A short tap without clicking still produces 9–13 reports, so touch down and lift are easy to tell apart.
+- Two fingers produce 18-byte reports; the second finger presumably follows in the same 7-byte layout.
+- The surface is the inner disc and the ring around it; clicks on the ring are separate button bits.
 
 ## Other GATT bits
 

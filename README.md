@@ -35,21 +35,22 @@ Der Dongle spricht diesen Dialekt und übersetzt ihn in das Einzige, was wirklic
 - **Touchpad-Wischen.** Die Remote schickt die Daten, wir werten bisher nur die Klicks aus. Steht ganz
   oben auf der Wunschliste.
 - **Siri.** Das Mikrofon wird nicht abonniert. Niemand hört zu. Versprochen.
-- **Fire TV.** Sollte gehen, ist aber ungetestet; siehe [Wunschliste](#wunschliste).
-- **Passwörter.** Dazu weiter unten mehr.
+- **Sprachsuche am Fire TV.** Die lässt sich von einer USB-Tastatur aus nicht auslösen, auch nicht von dieser.
+- **Passwörter.** Dazu weiter unten mehr, auch ein ernst gemeinter Satz.
 
 ## Womit es getestet ist
 
-Ehrlicherweise: mit genau einem Aufbau.
+Ehrlicherweise: mit genau einem Dongle, einer Remote und zwei Mediaplayern.
 
 | Teil | Getestet mit | Anmerkung |
 |---|---|---|
 | Board | ESP32-S3 Super Mini (4 MB Flash, 2 MB PSRAM) | Andere ESP32-S3-Boards mit nativem USB-Port gehen vermutlich auch; die LED sitzt dann woanders (einstellbar). |
 | Remote | Siri Remote 3. Generation, Modell A2854 (USB-C) | Ältere Generationen sprechen ein anderes Protokoll. |
-| Mediaplayer | Kodi auf CoreELEC | Alles, was eine USB-Tastatur annimmt, sollte gehen. |
+| Mediaplayer | Kodi auf CoreELEC, Fire TV Cube (Fire OS) | Alles, was eine USB-Tastatur annimmt, sollte gehen. |
 | Kabel | USB-C | Eines, das Daten kann. Ja, das muss man dazusagen. |
 
-Wer es mit etwas anderem ausprobiert: Rückmeldungen sind willkommen, in beide Richtungen.
+Wer es mit etwas anderem ausprobiert: Rückmeldungen sind willkommen, in beide Richtungen – am besten als
+[Issue](../../issues/new/choose), dort gibt es eine Vorlage dafür.
 
 ## Installieren
 
@@ -163,7 +164,7 @@ Wer die echte Remote in der Hand hat, drückt einfach die Taste; die Seite sprin
 Unter **Einstellungen** finden sich LED, Verbindung, WLAN, Firmware-Update, Sicherung und drei Stufen
 von „alles zurück“: WLAN vergessen, Einstellungen zurücksetzen, Werkszustand.
 
-Die Oberfläche spricht bisher nur Deutsch. Eine Sprachumschaltung steht auf der Wunschliste.
+Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt dem Browser, `DE | EN` im Kopf schaltet um.
 
 ### Zum Thema Passwort
 
@@ -173,6 +174,10 @@ Das Ding ist eine Fernbedienungs-Brücke, kein Tresor. Wer im selben Netz sitzt,
 Lautstärketaste umbelegen oder eine andere Firmware einspielen. Wer das im eigenen Wohnzimmer für ein
 realistisches Szenario hält, stellt „WLAN automatisch ausschalten“ auf ein paar Minuten, dann ist die
 Weboberfläche nur noch auf Knopfdruck da. Alle anderen lassen die Kirche im Dorf.
+
+Ein Satz ohne Augenzwinkern: Das gilt für das eigene Heimnetz. In einem Netz, das man sich mit Fremden
+teilt (WG, Wohnheim, Hotel, Büro), kann jeder dort die Firmware des Dongles austauschen. Dort das WLAN nach
+der Einrichtung ausschalten (BOOT kurz drücken) und nur bei Bedarf wieder einschalten.
 
 ## Update und Rückfall
 
@@ -233,7 +238,7 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 ## Wunschliste
 
 - [ ] **Touchpad:** Wischen als Pfeiltasten, wie am Apple TV
-- [ ] **Fire TV Cube** und andere Android-Geräte testen, die Profile danach nachschärfen
+- [ ] Andere **Android-Geräte** testen (Fire TV Cube ist erprobt), das Profil „Android / Fire TV“ nachschärfen
 - [ ] **Langer Tastendruck** als zweite Belegung
 - [ ] **Infrarot senden** als Belegungsart, etwa für die Lautstärke des Fernsehers (braucht eine IR-Diode am Dongle)
 - [ ] **Infrarot empfangen:** nebenbei auch gewöhnliche IR-Fernbedienungen übersetzen, der Dongle als besserer Flirc
@@ -249,7 +254,7 @@ Ohne die Vorarbeit dieser Projekte hätte das deutlich länger gedauert:
 - [zanneth/siriremote](https://code.zanneth.com/zanneth/siriremote) – Linux-Client
 - [h2zero/NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) – der BLE-Stack
 
-Entstanden an zwei Tagen im Dialog mit Claude Code, das den ESP dabei einmal in eine Boot-Schleife
+Entstanden an ein paar Tagen im Dialog mit Claude Code, das den ESP dabei einmal in eine Boot-Schleife
 geschickt und ihn anschließend wieder herausgeholt hat.
 
 ## Lizenz

@@ -1,0 +1,48 @@
+name: "Something is broken / Etwas geht nicht"
+description: "A bug in the firmware, the web interface or the installer. / Ein Fehler in Firmware, Weboberfläche oder Installer."
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English or German, whichever you prefer. / Deutsch oder Englisch, wie es dir lieber ist.
+
+        Please remove Wi-Fi names, IP and Bluetooth addresses from logs and screenshots before posting. / Bitte WLAN-Namen, IP- und Bluetooth-Adressen aus Logs und Screenshots entfernen.
+  - type: textarea
+    id: what
+    attributes:
+      label: "What happens, and what did you expect? / Was passiert, und was hättest du erwartet?"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to reproduce / Schritte zum Nachstellen"
+      placeholder: "1. …\n2. …"
+  - type: input
+    id: firmware
+    attributes:
+      label: "Firmware version"
+      description: "Shown at the top right of the web interface. / Steht oben rechts in der Weboberfläche."
+      placeholder: "v0.5.0"
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: "Board, remote, media player"
+      placeholder: "ESP32-S3 Super Mini · Siri Remote A2854 · CoreELEC 21"
+    validations:
+      required: true
+  - type: input
+    id: led
+    attributes:
+      label: "What does the status LED do? / Was macht die Status-LED?"
+      placeholder: "fast blue blinking / schnelles blaues Blinken"
+  - type: textarea
+    id: log
+    attributes:
+      label: "Serial log (optional)"
+      description: "From `tools/serial_log.py` or any serial monitor at 115200 baud. / Aus `tools/serial_log.py` oder einem seriellen Monitor mit 115200 Baud."
+      render: text
