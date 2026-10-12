@@ -166,7 +166,7 @@ levels of "undo everything": forget Wi-Fi, reset settings, factory reset.
 
 ### About passwords
 
-There are none. Not for the hotspot, not for the web interface. That is on purpose.
+Out of the box there are none. Not for the hotspot, not for the web interface. That is on purpose.
 
 This thing is a remote control bridge, not a vault. Anyone on the same network can remap your volume
 button or upload different firmware. If you consider that a realistic scenario in your own living
@@ -176,6 +176,13 @@ push of a button. Everyone else can keep a sense of proportion.
 One sentence without the wink: this holds for your own home network. On a network you share with
 strangers (shared flat, dorm, hotel, office), anyone there can replace the dongle's firmware. In that case
 turn Wi-Fi off after setup (short press on BOOT) and only turn it back on when needed.
+
+If you want one anyway: under **Settings → Availability of this page** you can set a password for the web
+interface. The page then asks for it once in every new browser, and without signing in there are neither
+settings nor firmware updates. The hotspot for first-time setup stays open. The dongle only speaks plain
+HTTP, so the password keeps flatmates and guests out, but nobody who can read the network traffic.
+Forgot it? Hold BOOT for 10 seconds and everything is gone, the password included. For scripts:
+`curl -u :password …`.
 
 ## Updates and rollback
 

@@ -19,6 +19,8 @@
 #include <ESPmDNS.h>
 #include <NimBLEDevice.h>
 #include <Preferences.h>
+#include <mbedtls/base64.h>
+#include <mbedtls/sha256.h>
 #include <USB.h>
 #include <USBHIDConsumerControl.h>
 #include <USBHIDKeyboard.h>
@@ -416,6 +418,104 @@ static String savedSsid() {
 
 static void touch() { lastHttpAt = millis(); }
 
+// ---- Optionales Passwort für die Weboberfläche --------------------------------------------------------
+// Ab Werk gibt es keins. Ist eins gesetzt, verlangen alle /api-Aufrufe eine Anmeldung; die Seite selbst
+// bleibt abrufbar und zeigt dann ihr Anmeldefeld. Gespeichert wird nicht das Passwort, sondern Salz und
+// SHA-256 davon. Der Hash ist zugleich der Wert des Anmelde-Cookies – so bleibt man über Neustarts angemeldet.
+// Für Skripte geht auch HTTP-Basic mit beliebigem Benutzernamen (curl -u :passwort).
+static String authSalt, authHash;  // leer = kein Passwort
+
+static String hashPassword(const String &salt, const String &password) {
+  String input = salt + password;
+  uint8_t digest[32];
+  mbedtls_sha256((const uint8_t *)input.c_str(), input.length(), digest, 0);
+  char hex[65];
+  for (int i = 0; i < 32; i++) sprintf(hex + 2 * i, "%02x", digest[i]);
+  return String(hex);
+}
+
+static void loadAuth() {
+  Preferences prefs;
+  prefs.begin("bridge", true);
+  authSalt = prefs.getString("authsalt", "");
+  authHash = prefs.getString("authhash", "");
+  prefs.end();
+}
+
+static void setPassword(const String &password) {
+  Preferences prefs;
+  prefs.begin("bridge", false);
+  if (password.isEmpty()) {
+    authSalt = authHash = "";
+    prefs.remove("authsalt");
+    prefs.remove("authhash");
+  } else {
+    char salt[17];
+    snprintf(salt, sizeof(salt), "%08lx%08lx", (unsigned long)esp_random(), (unsigned long)esp_random());
+    authSalt = salt;
+    authHash = hashPassword(authSalt, password);
+    prefs.putString("authsalt", authSalt);
+    prefs.putString("authhash", authHash);
+  }
+  prefs.end();
+}
+
+static void sendAuthCookie() {
+  server.sendHeader("Set-Cookie", authHash.isEmpty() ? String("sb=; Path=/; Max-Age=0")
+                                                     : "sb=" + authHash + "; Path=/; Max-Age=31536000; SameSite=Strict; HttpOnly");
+}
+
+static bool authorized() {
+  if (authHash.isEmpty()) return true;
+  String cookie = server.header("Cookie");
+  int at = cookie.indexOf("sb=");
+  if (at >= 0 && cookie.substring(at + 3, at + 3 + authHash.length()) == authHash) return true;
+  String basic = server.header("Authorization");
+  if (basic.startsWith("Basic ")) {
+    uint8_t plain[128];
+    size_t len = 0;
+    basic = basic.substring(6);
+    if (mbedtls_base64_decode(plain, sizeof(plain) - 1, &len, (const uint8_t *)basic.c_str(), basic.length()) == 0) {
+      plain[len] = 0;
+      const char *colon = strchr((const char *)plain, ':');
+      if (colon && hashPassword(authSalt, String(colon + 1)) == authHash) return true;
+    }
+  }
+  return false;
+}
+
+// Vor jedem geschützten Aufruf: ohne gültige Anmeldung 401 mit der Kennung „auth“.
+static bool guard() {
+  if (authorized()) return true;
+  server.send(401, "text/plain", "auth");
+  return false;
+}
+
+static void handleLogin() {
+  touch();
+  if (!authHash.isEmpty() && hashPassword(authSalt, server.arg("pass")) != authHash) {
+    delay(400);  // bremst das Durchprobieren
+    server.send(403, "text/plain", "bad-password");
+    return;
+  }
+  sendAuthCookie();
+  server.send(200, "text/plain", "ok");
+}
+
+// Setzt, ändert oder entfernt (leer) das Passwort. Wer das aufruft, ist bereits angemeldet.
+static void handlePassword() {
+  touch();
+  String password = server.arg("pass");
+  if (password.length() > 64) {
+    server.send(400, "text/plain", "bad-password");
+    return;
+  }
+  setPassword(password);
+  Serial.printf("[web] Passwort der Weboberflaeche %s\n", password.isEmpty() ? "entfernt" : "gesetzt");
+  sendAuthCookie();
+  server.send(200, "text/plain", "ok");
+}
+
 // Nach so vielen Millisekunden ohne Zugriff geht das WLAN aus; 0 = nie. Der offene Hotspot bleibt nie
 // dauerhaft an, auch wenn für das Heimnetz „nie“ eingestellt ist.
 static uint32_t setupLimitMs() {
@@ -427,7 +527,7 @@ static uint32_t setupLimitMs() {
 static void handleState() {
   touch();
   const char *ble = linkUp ? "connected" : connectPending ? "connecting" : isBonded() ? "searching" : "pairing";
-  String s = "{\"version\":\"" FW_VERSION "\",\"uptime\":" + String(millis() / 1000) + ",\"heap\":" + ESP.getFreeHeap() + ",\"ble\":\"" + ble + "\"";
+  String s = "{\"version\":\"" FW_VERSION "\",\"auth\":" + String(authHash.isEmpty() ? "false" : "true") + ",\"uptime\":" + String(millis() / 1000) + ",\"heap\":" + ESP.getFreeHeap() + ",\"ble\":\"" + ble + "\"";
   s += ",\"bond\":\"" + String(isBonded() ? NimBLEDevice::getBondedAddress(0).toString().c_str() : "") + "\"";
   if (linkUp && client) {
     s += ",\"interval\":" + String(client->getConnInfo().getConnInterval() * 1.25, 2) + ",\"rssi\":" + client->getRssi();
@@ -632,6 +732,7 @@ static void handleScan() {
 
 static void handleOtaUpload() {
   HTTPUpload &upload = server.upload();
+  if (!authorized()) return;  // die Antwort (401) gibt handleOtaDone
   if (upload.status == UPLOAD_FILE_START) {
     touch();
     Serial.printf("[ota] Upload %s\n", upload.filename.c_str());
@@ -669,19 +770,24 @@ static void handleOtaDone() {
 }
 
 static void setupRoutes() {
+  static const char *HEADERS[] = {"Cookie", "Authorization"};
+  server.collectHeaders(HEADERS, 2);
+  // Die Seite selbst und die Anmeldung sind immer erreichbar, alles andere nur mit Anmeldung (guard).
   server.on("/", HTTP_GET, []() { touch(); server.send_P(200, "text/html; charset=utf-8", INDEX_HTML); });
-  server.on("/api/state", HTTP_GET, handleState);
-  server.on("/api/live", HTTP_GET, handleLive);
-  server.on("/api/builtin", HTTP_GET, []() { touch(); server.send(200, "application/json", builtinJson()); });
-  server.on("/api/factory-reset", HTTP_POST, []() { server.send(200, "text/plain", "ok"); factoryResetRequested = true; });
-  server.on("/api/config", HTTP_POST, handleConfig);
-  server.on("/api/defaults", HTTP_POST, handleDefaults);
-  server.on("/api/wifi", HTTP_POST, handleWifi);
-  server.on("/api/scan", HTTP_GET, handleScan);
-  server.on("/api/unpair", HTTP_POST, []() { touch(); unpairRequested = true; server.send(200, "text/plain", "ok"); });
-  server.on("/api/setup-off", HTTP_POST, []() { server.send(200, "text/plain", "ok"); setupOffRequested = true; });
-  server.on("/api/reboot", HTTP_POST, []() { server.send(200, "text/plain", "ok"); rebootAt = millis() + 500; });
-  server.on("/api/ota", HTTP_POST, handleOtaDone, handleOtaUpload);
+  server.on("/api/login", HTTP_POST, handleLogin);
+  server.on("/api/password", HTTP_POST, []() { if (guard()) handlePassword(); });
+  server.on("/api/state", HTTP_GET, []() { if (guard()) handleState(); });
+  server.on("/api/live", HTTP_GET, []() { if (guard()) handleLive(); });
+  server.on("/api/builtin", HTTP_GET, []() { if (!guard()) return; touch(); server.send(200, "application/json", builtinJson()); });
+  server.on("/api/factory-reset", HTTP_POST, []() { if (!guard()) return; server.send(200, "text/plain", "ok"); factoryResetRequested = true; });
+  server.on("/api/config", HTTP_POST, []() { if (guard()) handleConfig(); });
+  server.on("/api/defaults", HTTP_POST, []() { if (guard()) handleDefaults(); });
+  server.on("/api/wifi", HTTP_POST, []() { if (guard()) handleWifi(); });
+  server.on("/api/scan", HTTP_GET, []() { if (guard()) handleScan(); });
+  server.on("/api/unpair", HTTP_POST, []() { if (!guard()) return; touch(); unpairRequested = true; server.send(200, "text/plain", "ok"); });
+  server.on("/api/setup-off", HTTP_POST, []() { if (!guard()) return; server.send(200, "text/plain", "ok"); setupOffRequested = true; });
+  server.on("/api/reboot", HTTP_POST, []() { if (!guard()) return; server.send(200, "text/plain", "ok"); rebootAt = millis() + 500; });
+  server.on("/api/ota", HTTP_POST, []() { if (guard()) handleOtaDone(); }, handleOtaUpload);
   server.onNotFound([]() {
     // Im eigenen Netz landen hier die Verbindungstests von Handy und Laptop; die Umleitung lässt
     // deren Anmeldeseite mit der Weboberfläche aufgehen.
@@ -827,6 +933,7 @@ void setup() {
   Serial.setTxTimeoutMs(0);  // Log nie blockieren lassen, falls ein Host den Port öffnet, aber nicht liest
   pinMode(BOOT_BUTTON, INPUT_PULLUP);
   cfg = loadConfig();
+  loadAuth();
   keyboard.begin();
   consumer.begin();
   USB.begin();

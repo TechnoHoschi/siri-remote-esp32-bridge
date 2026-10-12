@@ -168,7 +168,7 @@ Die Oberfläche gibt es auf Deutsch und Englisch; sie folgt dem Browser, `DE | E
 
 ### Zum Thema Passwort
 
-Es gibt keins. Weder für den Hotspot noch für die Weboberfläche. Das ist Absicht.
+Ab Werk gibt es keins. Weder für den Hotspot noch für die Weboberfläche. Das ist Absicht.
 
 Das Ding ist eine Fernbedienungs-Brücke, kein Tresor. Wer im selben Netz sitzt, kann die
 Lautstärketaste umbelegen oder eine andere Firmware einspielen. Wer das im eigenen Wohnzimmer für ein
@@ -178,6 +178,13 @@ Weboberfläche nur noch auf Knopfdruck da. Alle anderen lassen die Kirche im Dor
 Ein Satz ohne Augenzwinkern: Das gilt für das eigene Heimnetz. In einem Netz, das man sich mit Fremden
 teilt (WG, Wohnheim, Hotel, Büro), kann jeder dort die Firmware des Dongles austauschen. Dort das WLAN nach
 der Einrichtung ausschalten (BOOT kurz drücken) und nur bei Bedarf wieder einschalten.
+
+Wer trotzdem eins möchte: Unter **Einstellungen → Erreichbarkeit dieser Seite** lässt sich ein Passwort für
+die Weboberfläche setzen. Die Seite fragt dann in jedem neuen Browser einmal danach, und ohne Anmeldung
+gibt es weder Einstellungen noch Firmware-Update. Der Hotspot für die Ersteinrichtung bleibt offen. Der
+Dongle spricht nur unverschlüsseltes HTTP; das Passwort hält also Mitbewohner und Gäste ab, aber
+niemanden, der den Netzverkehr mitliest. Vergessen? BOOT 10 Sekunden halten, dann ist alles weg, auch das
+Passwort. Für Skripte: `curl -u :passwort …`.
 
 ## Update und Rückfall
 

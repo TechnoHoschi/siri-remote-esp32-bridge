@@ -57,10 +57,11 @@ class Mock:
         self.cfg = default_config()
         self.ssid = "Heimnetz-IoT"
         self.net = {"dhcp": True, "ip": "", "mask": "", "gw": "", "dns": ""}
+        self.password = ""  # Passwort der Weboberfläche; leer = keins (wie ab Werk)
 
     def state(self) -> dict:
         ap = self.scenario == "ap"
-        s = {"version": self.version, "uptime": int(time.time() - self.started), "heap": 121840,
+        s = {"version": self.version, "auth": bool(self.password), "uptime": int(time.time() - self.started), "heap": 121840,
              "ble": "connected" if ap else self.scenario,
              "bond": "" if self.scenario == "pairing" else "f0:0d:ca:fe:12:34",
              "wifiMode": "ap" if ap else "sta", "ssid": "siri-bridge-setup" if ap else self.ssid,
@@ -113,6 +114,11 @@ class Mock:
             self.cfg = default_config()
             self.ssid = ""
             self.scenario = "pairing"
+        elif path == "/api/login":
+            if self.password and form.get("pass", "") != self.password:
+                return 403, "bad-password"
+        elif path == "/api/password":
+            self.password = form.get("pass", "")
         elif path not in ("/api/setup-off", "/api/reboot"):
             return 404, "nicht gefunden"
         return 200, "ok"
@@ -142,13 +148,15 @@ class Handler(BaseHTTPRequestHandler):
         if not any(quiet in args[0] for quiet in ("/dev/mtime", "/api/state", "/api/live")):
             super().log_message(fmt, *args)
 
-    def reply(self, code: int, body: bytes | str, ctype: str = "text/plain; charset=utf-8") -> None:
+    def reply(self, code: int, body: bytes | str, ctype: str = "text/plain; charset=utf-8", cookie: str | None = None) -> None:
         if isinstance(body, str):
             body = body.encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        if cookie:
+            self.send_header("Set-Cookie", cookie)
         self.end_headers()
         self.wfile.write(body)
 
@@ -156,11 +164,14 @@ class Handler(BaseHTTPRequestHandler):
         req = urllib.request.Request(self.esp + self.path, data=body, method=self.command)
         if body is not None:
             req.add_header("Content-Type", self.headers.get("Content-Type", "application/x-www-form-urlencoded"))
+        for name in ("Cookie", "Authorization"):  # Anmeldung an der Weboberfläche durchreichen
+            if self.headers.get(name):
+                req.add_header(name, self.headers[name])
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
-                self.reply(r.status, r.read(), r.headers.get("Content-Type", "text/plain"))
+                self.reply(r.status, r.read(), r.headers.get("Content-Type", "text/plain"), r.headers.get("Set-Cookie"))
         except urllib.error.HTTPError as e:
-            self.reply(e.code, e.read())
+            self.reply(e.code, e.read(), cookie=e.headers.get("Set-Cookie"))
         except OSError as e:
             self.reply(502, f"Dongle nicht erreichbar: {e}")
 
@@ -188,6 +199,8 @@ class Handler(BaseHTTPRequestHandler):
             self.reply(200, self.mock.scenario)
         elif self.esp and url.path.startswith("/api/"):
             self.proxy(None)
+        elif url.path.startswith("/api/") and self.locked():
+            self.reply(401, "auth")
         elif url.path == "/api/state":
             self.reply(200, json.dumps(self.mock.state()), "application/json")
         elif url.path == "/api/builtin":
@@ -207,7 +220,19 @@ class Handler(BaseHTTPRequestHandler):
             return
         path = urllib.parse.urlparse(self.path).path
         form = {} if path == "/api/ota" else {k: v[0] for k, v in urllib.parse.parse_qs(body.decode(), keep_blank_values=True).items()}
-        self.reply(*self.mock.post(path, form))
+        if path != "/api/login" and self.locked():
+            self.reply(401, "auth")
+            return
+        code, text = self.mock.post(path, form)
+        # Anmelde-Cookie wie die Firmware: gesetzt nach Anmeldung und Passwortwechsel, gelöscht ohne Passwort
+        cookie = None
+        if code == 200 and path in ("/api/login", "/api/password"):
+            cookie = f"sb={self.mock.password}; Path=/" if self.mock.password else "sb=; Path=/; Max-Age=0"
+        self.reply(code, text, cookie=cookie)
+
+    def locked(self) -> bool:
+        """Beispieldaten: Ist ein Passwort gesetzt, braucht es das Cookie der Anmeldung."""
+        return bool(self.mock.password) and f"sb={self.mock.password}" not in self.headers.get("Cookie", "")
 
 
 def main() -> None:

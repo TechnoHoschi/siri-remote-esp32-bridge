@@ -228,7 +228,7 @@
   "reach.never": "nie – dauerhaft an (Standard)",
   "reach.remote": "Per Fernbedienung einschalten",
   "reach.siri": "Siri 5 Sekunden halten",
-  "reach.hint": "Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar – ohne Passwort, einschließlich Firmware-Update. Der eigene Hotspot des Dongles schaltet sich immer nach 10 Minuten ohne Zugriff ab.",
+  "reach.hint": "Mit „dauerhaft an“ ist diese Seite jederzeit im Heimnetz erreichbar, einschließlich Firmware-Update. Der eigene Hotspot des Dongles schaltet sich immer nach 10 Minuten ohne Zugriff ab.",
 
   "fw.title": "Firmware-Update",
   "fw.choose": "Datei auswählen",
@@ -275,5 +275,23 @@
   "done.wifioff": "WLAN wird ausgeschaltet – diese Seite ist gleich nicht mehr erreichbar.",
   "done.reboot": "Dongle startet neu …",
 
-  "err.bad-ip": "Ungültige IP-Angaben"
+  "login.title": "Anmeldung nötig",
+  "login.sub": "Diese Seite ist mit einem Passwort geschützt.",
+  "login.go": "Anmelden",
+  "login.wrong": "Falsches Passwort.",
+  "login.forgot": "Passwort vergessen? BOOT am Dongle 10 Sekunden halten stellt den Werkszustand her – dabei gehen auch Kopplung, Einstellungen und WLAN verloren.",
+
+  "pw.label": "Passwort für diese Seite",
+  "pw.state.off": "keins gesetzt",
+  "pw.state.on": "gesetzt",
+  "pw.set": "Setzen",
+  "pw.clear": "Passwort entfernen",
+  "pw.empty": "Bitte ein Passwort eintragen.",
+  "pw.done": "Passwort gesetzt.",
+  "pw.cleared": "Passwort entfernt.",
+  "pw.hint": "Ab Werk gibt es kein Passwort. Ist eins gesetzt, fragt die Seite in jedem neuen Browser einmal danach; es schützt auch das Firmware-Update. Der Dongle überträgt unverschlüsselt (HTTP): Das hält Mitbewohner und Gäste ab, aber niemanden, der den Netzverkehr mitliest.",
+
+  "err.bad-ip": "Ungültige IP-Angaben",
+  "err.bad-password": "Falsches oder zu langes Passwort",
+  "err.auth": "Bitte neu anmelden"
 }

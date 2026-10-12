@@ -61,9 +61,18 @@ abgefragt), `GET /api/scan` (WLANs), `GET /api/builtin` (mitgelieferte Profile),
 vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns` für eine feste Adresse), `/api/unpair`, `/api/setup-off`, `/api/reboot`, `/api/factory-reset`, `/api/ota`.
 Ändert sich die API, auch den Beispieldaten-Server in `tools/ui_dev.py` nachziehen.
 
+Anmeldung: Ist ein Passwort gesetzt (`"auth":true` in `/api/state`), antworten alle `/api`-Aufrufe ohne
+Anmeldung mit `401 auth`; nur `/` und `POST /api/login` (`pass`) bleiben frei. Die Anmeldung setzt das Cookie
+`sb` (SHA-256 aus Salz und Passwort, liegt so auch im NVS; das Passwort selbst wird nicht gespeichert).
+`POST /api/password` (`pass`, leer = entfernen) setzt oder ändert es. Für `curl` geht HTTP-Basic mit
+beliebigem Benutzernamen: `curl -u :passwort -F firmware=@… http://<ip>/api/ota`. Neue Routen immer über
+`guard()` registrieren. Das Passwort gehört nicht in die Sicherung (JSON) und übersteht `/api/defaults`;
+der Werksreset löscht es.
+
 ## Entscheidungen, die bewusst so sind
 
-- **Kein Passwort** für Hotspot und Weboberfläche.
+- **Kein Passwort ab Werk** für Hotspot und Weboberfläche. Für die Weboberfläche lässt sich eins setzen
+  (nur Passwort, kein Benutzername – Wunsch des Projektinhabers); der Hotspot bleibt immer offen.
 - **WLAN ab Werk dauerhaft an** (im Heimnetz); eine Abschaltzeit ist einstellbar, BOOT kurz oder Siri 5 s
   schalten um. Der eigene offene Hotspot geht dagegen immer nach 10 min ohne Zugriff aus.
 - Die LED blinkt nur beim offenen Hotspot violett; im Heimnetz zeigt sie den Zustand der Remote.

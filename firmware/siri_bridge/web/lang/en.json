@@ -228,7 +228,7 @@
   "reach.never": "never – always on (default)",
   "reach.remote": "Turn on from the remote",
   "reach.siri": "hold Siri for 5 seconds",
-  "reach.hint": "With “always on”, this page is reachable in your home network at any time – without a password, firmware update included. The dongle's own hotspot always switches off after 10 minutes without access.",
+  "reach.hint": "With “always on”, this page is reachable in your home network at any time, firmware update included. The dongle's own hotspot always switches off after 10 minutes without access.",
 
   "fw.title": "Firmware update",
   "fw.choose": "Choose file",
@@ -275,5 +275,23 @@
   "done.wifioff": "Wi-Fi is being turned off – this page will be unreachable in a moment.",
   "done.reboot": "Dongle is restarting …",
 
-  "err.bad-ip": "Invalid IP settings"
+  "login.title": "Sign-in required",
+  "login.sub": "This page is protected by a password.",
+  "login.go": "Sign in",
+  "login.wrong": "Wrong password.",
+  "login.forgot": "Forgot the password? Holding BOOT on the dongle for 10 seconds restores the factory state – pairing, settings and Wi-Fi are lost as well.",
+
+  "pw.label": "Password for this page",
+  "pw.state.off": "none set",
+  "pw.state.on": "set",
+  "pw.set": "Set",
+  "pw.clear": "Remove password",
+  "pw.empty": "Please enter a password.",
+  "pw.done": "Password set.",
+  "pw.cleared": "Password removed.",
+  "pw.hint": "There is no password by default. Once one is set, the page asks for it once in every new browser; it also protects the firmware update. The dongle talks plain HTTP: this keeps flatmates and guests out, but nobody who can read the network traffic.",
+
+  "err.bad-ip": "Invalid IP settings",
+  "err.bad-password": "Wrong password, or too long",
+  "err.auth": "Please sign in again"
 }

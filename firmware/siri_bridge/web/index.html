@@ -158,6 +158,9 @@
   .reset > button:nth-child(n+3) { margin-top:12px; }
   .reset button { white-space:nowrap; }
 
+  .login { max-width:460px; margin:8px auto 0; } .login p:first-child { margin:0 0 12px; }
+  .locked .tabs, .locked section, .locked #apnote { display:none !important; }
+
   .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--text); color:var(--bg); padding:9px 16px; border-radius:99px; font-size:14px; z-index:6; max-width:calc(100% - 32px); }
   .toast.err { background:var(--bad); color:#fff; }
 </style>
@@ -180,6 +183,13 @@
     <b data-i18n="apnote.title"></b>
     <span data-i18n-html="apnote.text"></span>
   </div>
+
+  <form class="card login" id="login" hidden>
+    <p data-i18n="login.sub"></p>
+    <div class="pw"><input type="password" name="pass" autocomplete="current-password" data-i18n-title="wifi.password"><button class="primary" type="submit" data-i18n="login.go"></button></div>
+    <div class="loaded err" id="loginmsg" hidden></div>
+    <p class="hint" data-i18n="login.forgot"></p>
+  </form>
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="start" data-i18n="tab.start"></button>
@@ -318,6 +328,10 @@
         <div class="field"><span data-i18n="reach.remote"></span><label class="check"><input type="checkbox" id="siri"> <span data-i18n="reach.siri"></span></label></div>
         <div class="savebar" data-keys="mins,siri"><button class="primary save" data-i18n="save"></button><button class="discard" data-i18n="discard"></button><span class="dirtynote"></span></div>
         <p class="hint" data-i18n="reach.hint"></p>
+        <div class="field" style="margin-top:14px"><span><span data-i18n="pw.label"></span><small id="pw-state"></small></span>
+          <span class="pw"><input type="password" id="pagepw" maxlength="64" autocomplete="new-password"><button type="button" id="pwset" data-i18n="pw.set"></button></span></div>
+        <div class="actions" id="pwclear-row" hidden><button class="danger" id="pwclear" data-i18n="pw.clear"></button></div>
+        <p class="hint" data-i18n="pw.hint"></p>
       </div>
     </div>
 
@@ -411,7 +425,7 @@ const $ = id => document.getElementById(id);
 const all = sel => document.querySelectorAll(sel);
 const dur = s => s >= 3600 ? Math.floor(s / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min' : s >= 60 ? Math.floor(s / 60) + ' min ' + (s % 60) + ' s' : s + ' s';
 
-let saved = null, draft = null, selected = 3, scannedOnce = false, toastTimer = 0, savedSsid = '', lastState = null, lastNets = [];
+let saved = null, draft = null, selected = 3, scannedOnce = false, toastTimer = 0, savedSsid = '', lastState = null, lastNets = [], locked = false;
 
 // ---- Hilfen -------------------------------------------------------------------------------------
 function toast(text, err) {
@@ -420,7 +434,12 @@ function toast(text, err) {
 }
 // Fehlertexte des Dongles sind kurze Kennungen (z. B. „bad-ip“); gibt es dazu einen Text, wird er gezeigt.
 const errText = err => t('error', {msg: t('err.' + err.message) === 'err.' + err.message ? err.message : t('err.' + err.message)});
-async function post(url, body) { const r = await fetch(url, {method:'POST', body}); if (!r.ok) throw new Error(await r.text() || r.status); return r.text(); }
+async function post(url, body) {
+  const r = await fetch(url, {method:'POST', body});
+  if (r.status === 401) setLocked(true);
+  if (!r.ok) throw new Error(await r.text() || r.status);
+  return r.text();
+}
 // Zweistufige Bestätigung im Knopf selbst statt eines Browser-Dialogs.
 function confirmed(button, action) {
   let timer = 0;
@@ -586,7 +605,7 @@ let liveSeq = null; const flashUntil = {};
 $('follow').checked = store.get('follow', '1') === '1';
 $('follow').onchange = () => store.set('follow', $('follow').checked ? '1' : '0');
 async function pollLive() {
-  if (document.hidden || ($('tab-tasten').hidden && $('tab-start').hidden) || !draft) return;
+  if (document.hidden || locked || ($('tab-tasten').hidden && $('tab-start').hidden) || !draft) return;
   let l; try { l = await (await fetch('/api/live')).json(); } catch (e) { return; }
   const now = Date.now();
   if (liveSeq !== null && l.seq !== liveSeq && l.last >= 0) {  // auch sehr kurze Drücke zwischen zwei Abfragen sichtbar machen
@@ -602,6 +621,7 @@ setInterval(pollLive, 150);
 function hero(cls, title, sub) { $('beacon').className = 'beacon ' + cls; $('title').textContent = title; $('subtitle').textContent = sub; }
 // Zeichnet alles, was vom Zustand des Dongles abhängt. Ohne Zustand (s = null): Dongle nicht erreichbar.
 function paintState(s) {
+  if (locked) { hero('wait', t('login.title'), ''); return; }
   if (!s) {
     hero('', t(lastState === undefined ? 'loading' : 'hero.unreachable'), lastState === undefined ? '' : t('hero.unreachable.sub'));
     paintLegend(null); return;
@@ -626,6 +646,7 @@ function paintState(s) {
   $('wifi').textContent = s.wifiMode === 'ap' ? t('dongle.wifi.ap', {ssid: s.ssid}) : s.wifiMode === 'sta' ? s.ssid : t('dongle.wifi.joining');
   $('ip').textContent = s.ip; $('left').textContent = s.cfg.mins === 0 && s.wifiMode !== 'ap' ? t('dongle.left.always') : t('dongle.left.in', {time: dur(s.setupLeft)});
   $('apnote').hidden = s.wifiMode !== 'ap'; $('unpair').disabled = !s.bond;
+  $('pw-state').textContent = t(s.auth ? 'pw.state.on' : 'pw.state.off'); $('pwclear-row').hidden = !s.auth;
   paintLegend(s.cfg);
 }
 // Texte der Übersicht, die von den Einstellungen abhängen (LED-Art, „aus solange verbunden“, Siri-Taste).
@@ -636,9 +657,30 @@ function paintLegend(cfg) {
   for (const [id, c] of [['slow', 'violet'], ['white', 'white'], ['yellow', 'yellow']]) $('led-' + id).innerHTML = t('led.' + id, {[c]: color(c)});
   $('dongle-hint').textContent = t('dongle.hint', {siri: cfg && cfg.siri ? t('dongle.hint.siri') : ''});
 }
+// ---- Anmeldung (nur wenn in den Einstellungen ein Passwort gesetzt wurde) -------------------------------
+// Der Dongle antwortet dann ohne Anmeldung mit 401; die Seite zeigt statt der Reiter das Passwortfeld.
+function setLocked(on) {
+  if (on === locked) return;
+  locked = on; document.body.classList.toggle('locked', on); $('login').hidden = !on;
+  if (on) { $('loginmsg').hidden = true; paintState(null); $('login').pass.focus(); }
+}
+$('login').onsubmit = async e => {
+  e.preventDefault(); const f = e.target;
+  try { await post('/api/login', new URLSearchParams({pass: f.pass.value})); }
+  catch (err) { $('loginmsg').textContent = t('login.wrong'); $('loginmsg').hidden = false; f.pass.select(); return; }
+  f.pass.value = ''; $('loginmsg').hidden = true; setLocked(false); refresh();
+};
+$('pwset').onclick = async () => {
+  const pass = $('pagepw').value;
+  if (!pass) return toast(t('pw.empty'), true);
+  try { await post('/api/password', new URLSearchParams({pass})); } catch (err) { return toast(errText(err), true); }
+  $('pagepw').value = ''; toast(t('pw.done')); refresh();
+};
+
 async function refresh() {
   let s = null;
-  try { s = await (await fetch('/api/state')).json(); } catch (e) {}
+  try { const r = await fetch('/api/state'); if (r.status === 401) return setLocked(true); s = await r.json(); } catch (e) {}
+  if (s) setLocked(false);
   lastState = s; paintState(s);
   if (!s) return;
   if (!saved) { loadConfig(s.cfg); savedSsid = s.savedSsid || ''; fillNetworks([]); fillNet(s.net); }
@@ -650,6 +692,7 @@ confirmed($('setupoff'), async () => { await post('/api/setup-off'); toast(t('do
 confirmed($('reboot'), async () => { await post('/api/reboot'); toast(t('done.reboot')); });
 confirmed($('defaults'), async () => { await post('/api/defaults'); saved = null; await refresh(); toast(t('reset.settings.done')); });
 confirmed($('factory'), async () => { await post('/api/factory-reset'); toast(t('reset.factory.done')); });
+confirmed($('pwclear'), async () => { await post('/api/password', new URLSearchParams({pass:''})); toast(t('pw.cleared')); refresh(); });
 confirmed($('wififorget'), async () => {
   await post('/api/wifi', new URLSearchParams({ssid:'', pass:''})); savedSsid = ''; fillNetworks([]); fillNet();
   toast(t('reset.wifi.done'));
