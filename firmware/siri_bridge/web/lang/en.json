@@ -185,9 +185,9 @@
   "set.conn.interval.fast": "7.5 ms (fastest)",
   "set.conn.interval.mid": "11.25 ms",
   "set.conn.interval.default": "15 ms (default)",
-  "set.conn.stale": "Discard old button presses",
-  "set.conn.stale.sub": "milliseconds after connecting, 0 = off",
-  "set.conn.hint": "The interval applies from the next connection. The remote buffers button presses while it is disconnected and delivers them on connecting; the filter suppresses such leftovers.",
+  "set.conn.stale": "Filter delayed button presses",
+  "set.conn.stale.sub": "time window after connecting in milliseconds, 0 = off",
+  "set.conn.hint": "The interval applies from the next connection. The remote buffers button presses while it is disconnected and delivers them all at once on connecting. The filter lets only the last one through – usually the one you just woke the remote with.",
 
   "wifi.title": "Home network",
   "wifi.network": "Network",

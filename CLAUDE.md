@@ -80,6 +80,12 @@ der Werksreset löscht es.
 - BOOT-Taste, ausgewertet beim Loslassen: kurz = WLAN ein/aus, 3 s = entkoppeln, 10 s = Werkszustand.
 - **Lizenz MIT-0**, so offen wie möglich.
 - **Tastenwiederholung macht der Host**, nicht die Bridge.
+- **Altlasten-Filter ab Werk 300 ms** (`staleMs`): Die Remote liefert beim Verbinden alles nach, was während
+  der Trennung gedrückt wurde, auch den Druck, mit dem sie geweckt wurde. Im Fenster nach dem Verbinden zählt
+  deshalb nur der letzte Druck (`flushStale()`), ältere werden verworfen. Pauschal verwerfen würde den
+  Aufweck-Druck verschlucken. Grenze: Verbindet sich die Remote von selbst neu (Dongle war stromlos), geht
+  der letzte alte Druck trotzdem einmal durch – die Remote liefert keine Zeitstempel. Am 2026-10-12 getestet:
+  drei gepufferte Drücke, nur der letzte kam an.
 - **Jede Einstellungskarte hat ihren eigenen Speichern-Knopf** und speichert nur ihre Felder; Entwürfe in
   anderen Karten bleiben erhalten. Rückmeldungen (Sicherung, Firmware-Update) stehen in der Karte selbst,
   nicht nur als Einblendung.

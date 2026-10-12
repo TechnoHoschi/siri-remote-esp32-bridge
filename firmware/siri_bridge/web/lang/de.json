@@ -185,9 +185,9 @@
   "set.conn.interval.fast": "7,5 ms (schnellste)",
   "set.conn.interval.mid": "11,25 ms",
   "set.conn.interval.default": "15 ms (Standard)",
-  "set.conn.stale": "Alte Tastendrücke verwerfen",
-  "set.conn.stale.sub": "Millisekunden nach dem Verbinden, 0 = aus",
-  "set.conn.hint": "Das Intervall gilt ab der nächsten Verbindung. Die Remote puffert Tastendrücke, während sie nicht verbunden ist, und liefert sie beim Verbinden nach; der Filter unterdrückt solche Altlasten.",
+  "set.conn.stale": "Nachgelieferte Tastendrücke filtern",
+  "set.conn.stale.sub": "Zeitfenster nach dem Verbinden in Millisekunden, 0 = aus",
+  "set.conn.hint": "Das Intervall gilt ab der nächsten Verbindung. Die Remote puffert Tastendrücke, während sie nicht verbunden ist, und liefert sie beim Verbinden auf einen Schlag nach. Der Filter lässt davon nur den letzten durch – in der Regel den, mit dem du die Remote gerade geweckt hast.",
 
   "wifi.title": "Heimnetz",
   "wifi.network": "Netzwerk",

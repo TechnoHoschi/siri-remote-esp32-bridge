@@ -85,6 +85,11 @@ static volatile int advRssi = 0;
 static uint16_t currentMask = 0;
 static uint32_t scanAt = 0;       // millis(), ab wann nach einem Fehlversuch wieder gescannt wird (0 = nichts geplant)
 static uint32_t readyAt = 0;      // millis() des letzten erfolgreichen Abonnierens
+// Altlasten-Filter (siehe applyMask): Zustand des Zeitfensters direkt nach dem Verbinden
+static bool staleOpen = false;
+static uint16_t staleMask = 0;
+static int8_t staleLast = -1;
+static uint16_t staleCount = 0;
 static uint32_t siriDownAt = 0;
 static int lastKey = -1;
 static uint32_t lastKeyAt = 0;
@@ -315,6 +320,10 @@ static void connectToCandidate() {
 
   if (ok) {
     readyAt = millis();
+    staleOpen = cfg.staleMs > 0;
+    staleMask = 0;
+    staleLast = -1;
+    staleCount = 0;
     linkUp = true;
     NimBLEConnInfo info = client->getConnInfo();
     Serial.printf("[ble] bereit: verbunden %lu ms, verschluesselt +%lu ms, abonniert +%lu ms | Intervall %.2f ms, Latency %u, Timeout %u ms, bonded=%d\n",
@@ -358,9 +367,14 @@ static void sendAction(const Action &a, bool down) {
 }
 
 static void applyMask(const ButtonEvent &ev) {
-  // Altlasten-Filter: Die Remote liefert beim Verbinden nach, was während der Trennung gedrückt wurde.
-  if (cfg.staleMs && millis() - readyAt < cfg.staleMs) {
-    Serial.printf("[key] 0x%04x verworfen (%lu ms nach dem Verbinden)\n", ev.mask, (unsigned long)(millis() - readyAt));
+  // Altlasten-Filter: Die Remote liefert beim Verbinden nach, was während der Trennung gedrückt wurde – auch
+  // den Druck, mit dem sie gerade geweckt wurde. Im Zeitfenster nach dem Verbinden wird deshalb nichts
+  // gesendet, sondern nur gemerkt, was zuletzt gedrückt wurde; flushStale() gibt am Ende genau das weiter.
+  if (staleOpen) {
+    uint16_t pressed = ev.mask & ~staleMask;
+    for (uint8_t i = 0; i < BUTTON_COUNT; i++) if (pressed & (1 << i)) staleLast = i;
+    staleMask = ev.mask;
+    staleCount++;
     return;
   }
   uint16_t changed = ev.mask ^ currentMask;
@@ -380,7 +394,25 @@ static void applyMask(const ButtonEvent &ev) {
   currentMask = ev.mask;
 }
 
+// Ende des Zeitfensters: Von allem, was die Remote nachgeliefert hat, zählt nur der letzte Druck. Ist die
+// Taste noch gedrückt, wird sie jetzt gedrückt (losgelassen wird sie später ganz normal), sonst kurz getippt.
+static void flushStale() {
+  staleOpen = false;
+  if (staleLast < 0) return;
+  uint16_t bit = 1 << staleLast;
+  Serial.printf("[key] %u nachgelieferte Meldungen, davon gilt: %s%s\n", (unsigned)staleCount, BUTTON_NAMES[staleLast],
+                (staleMask & bit) ? " (noch gedrueckt)" : " (getippt)");
+  ButtonEvent press = {(uint16_t)(currentMask | bit), micros()};
+  applyMask(press);
+  if (!(staleMask & bit)) {
+    delay(40);
+    ButtonEvent release = {(uint16_t)(currentMask & ~bit), micros()};
+    applyMask(release);
+  }
+}
+
 static void releaseEverything() {
+  staleOpen = false;
   keyboard.releaseAll();
   consumer.release();
   currentMask = 0;
@@ -1005,5 +1037,6 @@ void loop() {
 
   ButtonEvent ev;
   while (xQueueReceive(buttonQueue, &ev, 0) == pdTRUE) applyMask(ev);
+  if (staleOpen && millis() - readyAt >= cfg.staleMs) flushStale();
   delay(1);
 }

@@ -41,7 +41,7 @@ struct Config {
   uint8_t ledBrightness;         // nur LED_WS2812, 1…255
   uint8_t ledDarkWhenConnected;  // LED aus, solange die Remote verbunden ist
   uint8_t connInterval;          // Verbindungsintervall in 1,25-ms-Schritten, 6…12 (7,5…15 ms)
-  uint16_t staleMs;              // Tastendrücke in den ersten staleMs nach dem Verbinden verwerfen (0 = aus)
+  uint16_t staleMs;              // Zeitfenster nach dem Verbinden, aus dem nur der letzte Tastendruck zählt (0 = aus)
   uint8_t setupMinutes;          // WLAN endet nach so vielen Minuten ohne Zugriff (0 = nie, dauerhaft an)
   uint8_t siriSetup;             // Siri 5 s halten schaltet das WLAN um
 };
@@ -95,7 +95,7 @@ static Config defaultConfig() {
   c.ledBrightness = 24;
   c.ledDarkWhenConnected = 0;
   c.connInterval = 12;
-  c.staleMs = 0;
+  c.staleMs = 300;  // von nachgelieferten Tastendrücken nur den letzten durchlassen
   c.setupMinutes = 0;  // WLAN ab Werk dauerhaft an
   c.siriSetup = 1;
   return c;

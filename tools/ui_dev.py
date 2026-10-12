@@ -44,7 +44,7 @@ NETWORKS = [("Heimnetz-IoT", -48, False), ("Heimnetz", -52, False), ("FRITZ!Box 
 
 def default_config() -> dict:
     return {"active": 0, "profiles": builtin_profiles(),
-            "ledType": 1, "ledPin": 48, "ledInv": 0, "ledBri": 24, "ledDark": 0, "itv": 12, "stale": 0, "mins": 0, "siri": 1}
+            "ledType": 1, "ledPin": 48, "ledInv": 0, "ledBri": 24, "ledDark": 0, "itv": 12, "stale": 300, "mins": 0, "siri": 1}
 
 
 class Mock:
