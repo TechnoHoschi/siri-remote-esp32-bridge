@@ -1,0 +1,23 @@
+name: "Idea or wish / Idee oder Wunsch"
+description: "A feature or change you would like to see. / Eine Funktion oder Änderung, die du dir wünschst."
+title: "Idea: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English or German, whichever you prefer. / Deutsch oder Englisch, wie es dir lieber ist.
+
+        Ideas are welcome. Whether and when one gets built is decided by the maintainers; this is a spare-time project. / Ideen sind willkommen. Ob und wann eine umgesetzt wird, entscheiden die Betreuer; das ist ein Freizeitprojekt.
+  - type: textarea
+    id: what
+    attributes:
+      label: "What would you like, and what for? / Was wünschst du dir, und wofür?"
+      description: "The situation in which you missed it helps more than the solution. / Die Situation, in der es dir gefehlt hat, hilft mehr als die Lösung."
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: "Your setup (optional) / Dein Aufbau (optional)"
+      placeholder: "ESP32-S3 Super Mini · Siri Remote A2854 · Fire TV Stick 4K"

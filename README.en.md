@@ -261,6 +261,13 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] More **languages** for the web interface: copy `firmware/siri_bridge/web/lang/en.json`, translate, send it over
 - [ ] Properly test the mobile view of the web interface
 
+## Contributing
+
+Wishes, ideas and change requests are welcome, ideally as an [issue](../../issues/new/choose). Whether and
+when any of them gets built is our call, though: this is a spare-time project with exactly one living room
+as its test lab. Anything that does not fit can be built in your own fork, thanks to the license, without
+asking us.
+
 ## Thanks
 
 Without the groundwork of these projects this would have taken considerably longer:
@@ -282,5 +289,6 @@ remain under their own licenses.
 From the projects listed under [Thanks](#thanks) we took knowledge about the protocol, re-measured on our
 own remote, but no code.
 
-Apple, Siri and Apple TV are trademarks of Apple Inc. This project has nothing to do with Apple, other
-than being rather fond of one of their remotes.
+Apple, Siri and Apple TV are trademarks of Apple Inc.; Amazon, Fire TV and Alexa are trademarks of
+Amazon.com, Inc. or its affiliates. This project has nothing to do with either, other than being rather
+fond of one company's remote and using it on the other's device.

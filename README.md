@@ -262,6 +262,13 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] Weitere **Sprachen** für die Weboberfläche: `firmware/siri_bridge/web/lang/en.json` kopieren, übersetzen, schicken
 - [ ] Handy-Ansicht der Weboberfläche ordentlich durchtesten
 
+## Mitmachen
+
+Wünsche, Ideen und Änderungsvorschläge sind willkommen, am liebsten als
+[Issue](../../issues/new/choose). Ob und wann etwas davon umgesetzt wird, entscheiden wir allerdings selbst:
+Das hier ist ein Freizeitprojekt mit genau einem Wohnzimmer als Testlabor. Was nicht hineinpasst, darf dank
+der Lizenz jeder im eigenen Fork bauen, ganz ohne uns zu fragen.
+
 ## Dank
 
 Ohne die Vorarbeit dieser Projekte hätte das deutlich länger gedauert:
@@ -283,5 +290,6 @@ für die deren Lizenzen gelten.
 Aus den unter [Dank](#dank) genannten Projekten stammt Wissen über das Protokoll, das wir an der eigenen
 Remote nachgemessen haben, aber kein Code.
 
-Apple, Siri und Apple TV sind Marken von Apple Inc. Dieses Projekt hat mit Apple nichts zu tun, außer
-dass es eine ihrer Fernbedienungen ziemlich mag.
+Apple, Siri und Apple TV sind Marken von Apple Inc.; Amazon, Fire TV und Alexa sind Marken von Amazon.com, Inc.
+oder verbundenen Unternehmen. Dieses Projekt hat mit beiden nichts zu tun, außer dass es die Fernbedienung
+des einen ziemlich mag und sie am Gerät des anderen benutzt.
