@@ -94,8 +94,10 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
    CoreELEC-Box und Fire TV bestätigt: funktioniert einwandfrei.)
 3. Langer Tastendruck als zweite Belegung.
 4. Sprache der Weboberfläche umschaltbar (Deutsch/Englisch).
-5. Erstflash im Browser testen: mit esptool-js und dem merged-Image, nach dem Veröffentlichen auch den
-   Ein-Klick-Installer (GitHub Pages). Vom Projektinhaber am 2026-10-11 zurückgestellt.
+5. Ein-Klick-Installer (GitHub Pages) testen, sobald das Repo öffentlich ist. Der händische Erstflash mit
+   esptool-js und dem merged-Image ist am 2026-10-12 vom Projektinhaber bestanden (ebenso der Werksreset über
+   BOOT 10 s); die Stolperstellen stehen in der README: Adresse `0x0` statt der vorbelegten `0x1000`,
+   Flash-Modus nur per BOOT + RESET, 115200 statt 921600 Baud.
 6. Handy-Ansicht der Weboberfläche gezielt durchsehen.
 7. Infrarot senden als dritte Belegungsart neben Tastatur und Multimedia (z. B. TV-Lautstärke), braucht
    eine IR-Sendediode am Dongle mit Sicht zum Fernseher. Hintergrund: Die Remote sendet Lautstärke und Mute

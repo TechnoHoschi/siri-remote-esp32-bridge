@@ -57,10 +57,20 @@ Wer es mit etwas anderem ausprobiert: Rückmeldungen sind willkommen, in beide R
 [Browser-Installer](https://technohoschi.github.io/siri-remote-esp32-bridge/) öffnen, „Installieren“
 klicken.
 
-**Der händische Weg:** Unter [Releases](../../releases) die Datei `siri_bridge-…-merged.bin` laden und
-mit [esptool-js](https://espressif.github.io/esptool-js/) oder `esptool` an Adresse `0x0` flashen.
+**Der händische Weg:** mit [esptool-js](https://espressif.github.io/esptool-js/) in Chrome oder Edge.
 
-Geht der ESP nicht von selbst in den Flash-Modus: BOOT halten, RESET tippen, BOOT loslassen.
+1. Unter [Releases](../../releases) die Datei `siri_bridge-…-merged.bin` laden.
+2. Den ESP in den Flash-Modus bringen: **BOOT halten, RESET tippen, BOOT loslassen** (oder BOOT beim
+   Einstecken halten). Die LED bleibt dunkel. Von selbst geht er nicht dorthin, und esptool-js meldet dann
+   nur „Failed to connect with the device“.
+3. Baudrate auf **115200** stellen (mit den vorbelegten 921600 kam bei uns keine Verbindung zustande), einmal „Connect“ klicken und den Eintrag „USB JTAG/serial debug unit“
+   wählen.
+4. Bei „Flash Address“ **`0x0`** eintragen. Vorbelegt ist dort `0x1000`, und das ist falsch: Dann passt
+   das Image nicht mehr in den Speicher, der Vorgang endet mit einem Fehler und der ESP startet nicht.
+   (Kaputt geht dabei nichts, einfach mit `0x0` wiederholen.)
+5. Datei auswählen, „Program“ klicken, auf „Hash of data verified“ warten, ESP einmal ab- und anstecken.
+
+Wer lieber tippt: `esptool --chip esp32s3 write-flash 0x0 siri_bridge-…-merged.bin`.
 
 Beide Wege überschreiben alles, auch Kopplung und Einstellungen. Für spätere Updates nimmt man deshalb
 die `…-ota.bin` und die Weboberfläche.
