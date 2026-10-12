@@ -22,6 +22,9 @@
 #include <USB.h>
 #include <USBHIDConsumerControl.h>
 #include <USBHIDKeyboard.h>
+#ifdef TOUCH_MOUSE
+#include <USBHIDMouse.h>
+#endif
 #include <Update.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -68,6 +71,13 @@ enum WifiState : uint8_t { WIFI_IDLE, WIFI_JOINING, WIFI_STATION, WIFI_ACCESS_PO
 
 USBHIDKeyboard keyboard;
 USBHIDConsumerControl consumer;
+#ifdef TOUCH_MOUSE  // Prototyp: Touchfläche als Maus (EXTRA_FLAGS=-DTOUCH_MOUSE). Siri ~0,7 s halten schaltet um.
+USBHIDMouse mouse;
+static volatile bool mouseMode = false;
+static volatile int32_t mouseAccX = 0, mouseAccY = 0;  // aufgelaufene Bewegung in 1/256 Pixel
+static portMUX_TYPE mouseMux = portMUX_INITIALIZER_UNLOCKED;
+static const uint32_t MOUSE_TOGGLE_MS = 700;
+#endif
 WebServer server(80);
 DNSServer dns;  // nur im eigenen Netz: beantwortet jede Anfrage mit der eigenen Adresse (Captive Portal)
 
@@ -292,6 +302,76 @@ static bool subscribeButtons() {
   return false;
 }
 
+#ifdef TOUCH_MOUSE
+// Touch-Report 0xFC, ein Finger (11 Byte): ab Byte 4 X und Y als 12 Bit mit Vorzeichen (Y nach oben positiv),
+// im letzten Byte unten der Zustand (3 = aufgesetzt, 4 = liegt auf, 5..7 = hebt ab, 0 = weg).
+static void onTouchMouse(NimBLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+  static bool have = false;
+  static int16_t px = 0, py = 0;
+  if (len != 11 || !mouseMode) { have = false; return; }
+  int16_t x = data[4] | (data[5] & 0x0F) << 8, y = data[5] >> 4 | data[6] << 4;
+  if (x & 0x800) x -= 4096;
+  if (y & 0x800) y -= 4096;
+  uint8_t state = data[10] & 0x07;
+  if (state != 3 && state != 4) { have = false; return; }
+  if (have) {
+    int32_t dx = x - px, dy = py - y;
+    // Beschleunigung: langsame Bewegung fein (0,5 Pixel je Einheit), schnelle bis etwa 3,5-fach.
+    int32_t speed = max(abs(dx), abs(dy));
+    int32_t gain = 128 + min(speed, (int32_t)40) * 20;  // in 1/256
+    portENTER_CRITICAL(&mouseMux);
+    mouseAccX += dx * gain;
+    mouseAccY += dy * gain;
+    portEXIT_CRITICAL(&mouseMux);
+  }
+  px = x; py = y; have = true;
+}
+
+static void subscribeTouchMouse() {
+  NimBLERemoteService *hid = client->getService(HID_SERVICE);
+  if (!hid) return;
+  for (NimBLERemoteCharacteristic *chr : hid->getCharacteristics(true)) {
+    if (chr->getUUID() != REPORT_CHAR || !chr->canNotify()) continue;
+    NimBLERemoteDescriptor *ref = chr->getDescriptor(REPORT_REFERENCE);
+    if (!ref) continue;
+    NimBLEAttValue value = ref->readValue();
+    if (value.size() != 2 || value[0] != 0xFC || value[1] != REPORT_TYPE_INPUT) continue;
+    Serial.printf("[ble] Touch-Report 0xFC %s\n", chr->subscribe(true, onTouchMouse) ? "abonniert (TOUCH_MOUSE)" : "nicht abonnierbar");
+  }
+}
+
+static void flushMouse() {
+  if (!mouseAccX && !mouseAccY) return;
+  portENTER_CRITICAL(&mouseMux);
+  int32_t mx = mouseAccX / 256, my = mouseAccY / 256;
+  mx = constrain(mx, -127, 127); my = constrain(my, -127, 127);
+  mouseAccX -= mx * 256; mouseAccY -= my * 256;
+  portEXIT_CRITICAL(&mouseMux);
+  if (mx || my) mouse.move(mx, my);
+}
+#endif
+
+#ifdef TOUCH_LOG  // nur zum Erkunden: Touch-Report 0xFC roh ins Serial-Log (EXTRA_FLAGS=-DTOUCH_LOG)
+static void onTouchReport(NimBLERemoteCharacteristic *, uint8_t *data, size_t len, bool) {
+  char hex[2 * 24 + 1] = "";
+  for (size_t i = 0; i < len && i < 24; i++) sprintf(hex + 2 * i, "%02x", data[i]);
+  Serial.printf("[touch] %lu %u %s\n", (unsigned long)micros(), (unsigned)len, hex);
+}
+
+static void subscribeTouchLog() {
+  NimBLERemoteService *hid = client->getService(HID_SERVICE);
+  if (!hid) return;
+  for (NimBLERemoteCharacteristic *chr : hid->getCharacteristics(true)) {
+    if (chr->getUUID() != REPORT_CHAR || !chr->canNotify()) continue;
+    NimBLERemoteDescriptor *ref = chr->getDescriptor(REPORT_REFERENCE);
+    if (!ref) continue;
+    NimBLEAttValue value = ref->readValue();
+    if (value.size() != 2 || value[0] != 0xFC || value[1] != REPORT_TYPE_INPUT) continue;
+    Serial.printf("[ble] Touch-Report 0xFC %s\n", chr->subscribe(true, onTouchReport) ? "abonniert (TOUCH_LOG)" : "nicht abonnierbar");
+  }
+}
+#endif
+
 static void connectToCandidate() {
   uint32_t t0 = millis();
   if (!client) {
@@ -310,6 +390,12 @@ static void connectToCandidate() {
   }
   uint32_t tSecured = millis();
   if (ok) ok = subscribeButtons();
+#ifdef TOUCH_LOG
+  if (ok) subscribeTouchLog();
+#endif
+#ifdef TOUCH_MOUSE
+  if (ok) subscribeTouchMouse();
+#endif
 
   if (ok) {
     readyAt = millis();
@@ -366,6 +452,12 @@ static void applyMask(const ButtonEvent &ev) {
     uint16_t bit = 1 << i;
     if (!(changed & bit)) continue;
     bool down = ev.mask & bit;
+#ifdef TOUCH_MOUSE
+    if (i == SIRI_INDEX) {  // im Prototyp gehört die Siri-Taste allein der Umschaltung
+    } else if (mouseMode && i == 3) {
+      if (down) mouse.press(MOUSE_LEFT); else mouse.release(MOUSE_LEFT);
+    } else
+#endif
     sendAction(cfg.profiles[cfg.active].map[i], down);
     if (i == SIRI_INDEX) siriDownAt = down ? millis() : 0;
     if (down) {
@@ -829,6 +921,9 @@ void setup() {
   cfg = loadConfig();
   keyboard.begin();
   consumer.begin();
+#ifdef TOUCH_MOUSE
+  mouse.begin();
+#endif
   USB.begin();
   buttonQueue = xQueueCreate(32, sizeof(ButtonEvent));
   WiFi.persistent(false);  // Zugangsdaten verwaltet die Firmware selbst im NVS
@@ -891,6 +986,16 @@ void loop() {
     startScan();
   }
 
+#ifdef TOUCH_MOUSE
+  if (siriDownAt && millis() - siriDownAt > MOUSE_TOGGLE_MS) {
+    siriDownAt = 0;
+    mouseMode = !mouseMode;
+    if (!mouseMode) mouse.release(MOUSE_LEFT);
+    wifiSignalAt = millis() | 1;
+    Serial.printf("[maus] Mausmodus %s\n", mouseMode ? "EIN" : "AUS");
+  }
+  flushMouse();
+#endif
   if (cfg.siriSetup && siriDownAt && millis() - siriDownAt > SIRI_HOLD_MS) {
     siriDownAt = 0;
     if (setupActive()) stopSetup(); else startSetup();
