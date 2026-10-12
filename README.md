@@ -25,7 +25,7 @@ Der Dongle spricht diesen Dialekt und übersetzt ihn in das Einzige, was wirklic
 - Alle 13 Tasten als USB-Tastatur oder Multimedia-Taste, frei belegbar
 - Vier Belegungsprofile zum Umschalten und Umbenennen, drei davon vorbelegt
 - Reaktion ohne spürbare Verzögerung, Gedrückthalten wiederholt (das erledigt der Mediaplayer)
-- Weboberfläche mit Live-Anzeige der Tastendrücke, Akkustand der Remote, hell und dunkel
+- Weboberfläche mit Live-Anzeige der Tastendrücke, Akkustand der Remote, hell und dunkel, deutsch und englisch
 - Firmware-Update über die Weboberfläche, mit automatischem Rückfall, falls das Update Unsinn war
 - Status-LED, die tatsächlich etwas bedeutet
 - Sicherung und Wiederherstellung der Konfiguration als JSON-Datei
@@ -114,7 +114,7 @@ umbelegen und umbenennen.
 | Lauter / Leiser / Mute | Multimedia-Tasten | Multimedia-Tasten | Multimedia-Tasten |
 | Siri | Multimedia „Suche“ | nichts | Multimedia „Suche“ |
 
-Das vierte Profil, „Eigenes Profil“, ist eine Kopie von „Universal“ zum Verbasteln.
+Das vierte Profil, „Custom“, ist eine Kopie von „Universal“ zum Verbasteln.
 
 „Universal“ ist bei einer Fernbedienung abgeschaut, die über einen Flirc-Dongle an Fire TV und CoreELEC
 gleichermaßen funktioniert: Menütaste und Multimedia-„Zurück“. Die Clickpad-Mitte sendet dort die
@@ -207,7 +207,9 @@ Browser-Installer.
 |---|---|
 | `firmware/siri_bridge/` | Firmware: BLE, USB-HID, Weboberfläche, Einstellungen |
 | `firmware/siri_bridge/web/index.html` | Die Weboberfläche, eine einzige Datei |
+| `firmware/siri_bridge/web/lang/` | Die Texte der Weboberfläche, je Sprache eine JSON-Datei |
 | `tools/ui_dev.py` | Entwicklungsserver für die Weboberfläche |
+| `tools/ui_snap.py` | Macht Bilder der Weboberfläche mit Chromium ohne Bildschirm (die Screenshots hier) |
 | `tools/serial_log.py`, `tools/hid_watch.py` | Serial-Log des ESP und seine USB-Tastendrücke unter Linux mitlesen |
 | `tools/key_scan.py` | Zeigt, was ein anderes USB-Eingabegerät sendet, etwa ein Flirc |
 | `tools/esp_rescue.py` | Holt einen ESP aus der Boot-Schleife |
@@ -235,7 +237,7 @@ Die Details stehen in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] **Langer Tastendruck** als zweite Belegung
 - [ ] **Infrarot senden** als Belegungsart, etwa für die Lautstärke des Fernsehers (braucht eine IR-Diode am Dongle)
 - [ ] **Infrarot empfangen:** nebenbei auch gewöhnliche IR-Fernbedienungen übersetzen, der Dongle als besserer Flirc
-- [ ] **Sprache der Weboberfläche umschaltbar**
+- [ ] Weitere **Sprachen** für die Weboberfläche: `firmware/siri_bridge/web/lang/en.json` kopieren, übersetzen, schicken
 - [ ] Handy-Ansicht der Weboberfläche ordentlich durchtesten
 
 ## Dank

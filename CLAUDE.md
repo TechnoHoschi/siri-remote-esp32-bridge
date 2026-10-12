@@ -14,11 +14,12 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
 |---|---|
 | `firmware/siri_bridge/siri_bridge.ino` | Firmware: BLE-Central (NimBLE), USB-HID, Setup-Modus mit WLAN und Webserver, OTA |
 | `firmware/siri_bridge/config.h` | Einstellungen (Belegung, LED, Timing) als ein Blob im NVS |
-| `firmware/siri_bridge/web/index.html` | Weboberfläche, eine Datei ohne externe Abhängigkeiten |
-| `firmware/build.sh` | Baut, erzeugt `web_ui.h` aus der HTML-Datei, legt Images in `firmware/dist/` ab, flasht optional |
+| `firmware/siri_bridge/web/index.html` | Weboberfläche, eine Datei ohne externe Abhängigkeiten und ohne eigenen Text |
+| `firmware/siri_bridge/web/lang/*.json` | Texte der Weboberfläche, je Sprache eine Datei (`de`, `en`) |
+| `firmware/build.sh` | Baut, erzeugt `web_ui.h` aus HTML-Datei und Sprachdateien (`tools/web_bundle.py`), legt Images in `firmware/dist/` ab, flasht optional |
 | `flasher/index.html` | Browser-Installer (ESP Web Tools), wird per GitHub Pages ausgeliefert |
 | `.github/workflows/release.yml` | Baut bei jedem `v*`-Tag, hängt Images ans Release, veröffentlicht den Installer |
-| `tools/` | `ui_dev.py` (Weboberfläche ohne ESP), `serial_log.py`, `hid_watch.py`, `esp_rescue.py` |
+| `tools/` | `ui_dev.py` (Weboberfläche ohne ESP), `ui_snap.py` (Bilder davon ohne Bildschirm), `web_bundle.py`, `serial_log.py`, `hid_watch.py`, `esp_rescue.py` |
 | `tools/linux/` | Remote direkt unter Linux mitlesen (BlueZ + bleak), aus der Erkundungsphase |
 | `docs/PROTOCOL.md` | Protokoll-Erkenntnisse mit Messwerten (englisch) – bei neuen Erkenntnissen dort nachtragen |
 
@@ -33,9 +34,24 @@ in `CLAUDE.local.md` (steht in der `.gitignore`).
   darf immer nur einer laufen – zwei teilen sich die Ausgabe zeichenweise.
 - Updates am laufenden Dongle per OTA: `curl -F firmware=@firmware/dist/…-ota.bin http://<ip>/api/ota`.
 - Release: Tag `vX.Y.Z` pushen, den Rest erledigt der Workflow.
-- Sprache: Oberfläche, Kommentare, Log-Meldungen und README deutsch; `README.en.md` und `docs/PROTOCOL.md`
-  englisch. Die README hat bewusst einen humorvollen Ton. Screenshots in `docs/` stammen aus `ui_dev.py`
+- Sprache: Kommentare, Log-Meldungen und README deutsch; Weboberfläche deutsch und englisch; `README.en.md` und `docs/PROTOCOL.md`
+  englisch. Die README hat bewusst einen humorvollen Ton. Screenshots in `docs/` (englische in `docs/en/`) stammen aus `ui_snap.py`
   mit erfundenen Adressen.
+
+## Sprachen der Weboberfläche
+
+- Jeder sichtbare Text steht als Schlüssel in `web/lang/de.json` und `web/lang/en.json`; `index.html` selbst
+  enthält keinen Text. Feste Stellen tragen `data-i18n` (Text), `data-i18n-html` (Text mit Auszeichnung) oder
+  `data-i18n-title` (Tooltip), im Skript holt `t('schlüssel', {platzhalter})` den Text.
+- Neuer Text = neuer Schlüssel in **beiden** Dateien. `tools/web_bundle.py` prüft beim Bauen fehlende,
+  überzählige und unbekannte Schlüssel sowie abweichende Platzhalter; ohne zweite Angabe prüft es nur.
+- Englisch ist Rückfallsprache (fehlender Schlüssel, unbekannte Browsersprache). Die Wahl liegt im Browser
+  (`localStorage`), nicht auf dem Dongle. Der Umschalter im Kopf entsteht aus den vorhandenen Dateien.
+- Die Firmware schickt der Seite keine Texte, nur Kennungen (z. B. `bad-ip` → Schlüssel `err.bad-ip`).
+- Die Übersetzung des Browsers ist abgeschaltet (`translate="no"`), sie hat die Seite verfälscht. Kein
+  natives Dateifeld verwenden: Dessen Beschriftung folgt der Browsersprache.
+- Bilder zur Kontrolle und für `docs/`: `python3 tools/ui_snap.py <sprache> <reiter> <breite> <höhe> <ziel.png>`
+  (braucht laufenden `ui_dev.py` und `chromium`).
 
 ## HTTP-API der Firmware (solange das WLAN an ist)
 
@@ -60,7 +76,7 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
   nicht nur als Einblendung.
 - Die Belegung wird als HID-Usage gespeichert, nicht als Zeichen.
 - **Vier Belegungsprofile** (`config.h`, `builtinProfile()`): „Universal“ (Standard), „Kodi (CoreELEC)“,
-  „Android / Fire TV“ (ungetestet), „Eigenes Profil“. „Universal“ übernimmt Menü (Tastatur `0x65`) und
+  „Android / Fire TV“ (ungetestet), „Custom“ (Namen bewusst sprachneutral). „Universal“ übernimmt Menü (Tastatur `0x65`) und
   Zurück (Consumer `0x224`) von einem Flirc-Dongle des Projektinhabers, der an Fire TV und CoreELEC
   funktioniert (am 2026-10-11 mit `tools/key_scan.py` ausgelesen). Clickpad-Mitte sendet in „Universal“
   und „Android / Fire TV“ die Fernbedienungs-OK-Taste (Consumer `0x41` „Menu Pick“, Android: `DPAD_CENTER`)
@@ -101,7 +117,8 @@ vergessen; `keep=1` behält das Passwort; `dhcp=0` mit `ip`, `mask`, `gw`, `dns`
 2. „Android / Fire TV“-Profil testen und nachschärfen. („Universal“ ist vom Projektinhaber am 2026-10-11 an
    CoreELEC-Box und Fire TV bestätigt: funktioniert einwandfrei.)
 3. Langer Tastendruck als zweite Belegung.
-4. Sprache der Weboberfläche umschaltbar (Deutsch/Englisch).
+4. Weitere Sprachen für die Weboberfläche (Deutsch und Englisch sind seit 2026-10-12 da). Nur Sprachen
+   ausliefern, die jemand gegenlesen kann.
 5. Ein-Klick-Installer (GitHub Pages) testen, sobald das Repo öffentlich ist. Der händische Erstflash mit
    esptool-js und dem merged-Image ist am 2026-10-12 vom Projektinhaber bestanden (ebenso der Werksreset über
    BOOT 10 s); die Stolperstellen stehen in der README: Adresse `0x0` statt der vorbelegten `0x1000`,

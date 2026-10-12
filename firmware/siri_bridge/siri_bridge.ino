@@ -589,7 +589,7 @@ static void handleWifi() {
   if (manual && (!check.fromString(server.arg("ip")) || !check.fromString(server.arg("mask")) ||
                  (!server.arg("gw").isEmpty() && !check.fromString(server.arg("gw"))) ||
                  (!server.arg("dns").isEmpty() && !check.fromString(server.arg("dns"))))) {
-    server.send(400, "text/plain", "Ungueltige IP-Angaben");
+    server.send(400, "text/plain", "bad-ip");  // Kennung, den Text dazu hat die Weboberfläche
     return;
   }
   Preferences prefs;

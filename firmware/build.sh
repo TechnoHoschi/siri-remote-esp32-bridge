@@ -19,17 +19,10 @@ BUILD="$DIR/build/$SKETCH"
 DIST="$DIR/dist"
 mkdir -p "$BUILD" "$DIST"
 
-# Weboberfläche: web/index.html ist die Quelle, daraus entsteht der Header mit der Seite als String.
+# Weboberfläche: web/index.html und web/lang/*.json sind die Quelle, daraus entsteht der Header mit der Seite
+# als String. Passen die Sprachdateien nicht zueinander, bricht der Bau ab.
 if [ -f "$DIR/$SKETCH/web/index.html" ]; then
-  python3 - "$DIR/$SKETCH/web/index.html" "$DIR/$SKETCH/web_ui.h" <<'PY'
-import sys
-html = open(sys.argv[1], encoding="utf-8").read()
-assert ')HTML"' not in html, "index.html enthält das Endezeichen des Raw-Strings"
-open(sys.argv[2], "w", encoding="utf-8").write(
-    "// ERZEUGT von firmware/build.sh aus web/index.html – nicht von Hand ändern.\n"
-    "#pragma once\n\n#include <Arduino.h>\n\n"
-    'static const char INDEX_HTML[] PROGMEM = R"HTML(' + html + ')HTML";\n')
-PY
+  python3 "$DIR/../tools/web_bundle.py" "$DIR/$SKETCH/web/index.html" "$DIR/$SKETCH/web_ui.h"
 fi
 
 arduino-cli compile --fqbn "$FQBN" --build-path "$BUILD" \

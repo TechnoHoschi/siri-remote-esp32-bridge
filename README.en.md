@@ -8,9 +8,9 @@ and shows up on your media player as a perfectly ordinary **USB keyboard**. Buil
 
 In short: a "Flirc for the Siri Remote". Apple would rather sell you an Apple TV.
 
-![Web interface overview](docs/uebersicht.png)
+![Web interface overview](docs/en/overview.png)
 
-*The web interface is German-only for now. A language switch is on the wish list.*
+*The web interface speaks English and German and follows your browser; `DE | EN` in the header switches.*
 
 ## Why this exists
 
@@ -114,13 +114,13 @@ and renamed.
 | Volume up / down / Mute | Media keys | Media keys | Media keys |
 | Siri | Media "Search" | nothing | Media "Search" |
 
-The fourth profile, "Eigenes Profil" (custom), starts as a copy of "Universal" for tinkering.
+The fourth profile, "Custom", starts as a copy of "Universal" for tinkering.
 
 "Universal" was copied from a remote that works on both Fire TV and CoreELEC through a Flirc dongle: the
 keyboard's Menu key and the media "Back" key. The clickpad centre sends a remote control's OK key there
 instead of Enter, because Android does not open the on-screen keyboard in a search field on Enter. The Siri button
 sends "Search": that opens the search in apps such as YouTube, while nothing happens on the Fire TV home
-screen. Voice search cannot be triggered there by a USB key; "Sprachassistent" (voice assistant) is still
+screen. Voice search cannot be triggered there by a USB key; "Voice assistant" is still
 available in the list for other Android devices. If you have such a proven pair yourself, `tools/key_scan.py`
 shows what it sends. "Universal" has been tried on a CoreELEC box and a Fire TV; "Android / Fire TV" is
 untested so far.
@@ -128,7 +128,7 @@ untested so far.
 **About volume, with caution:** the remote also sends volume up, down and mute over infrared by itself,
 using the codes it once learned for your TV on an Apple TV. For us this mostly kept working after pairing
 with the dongle, but at one point it did not, and we do not know why. If your TV reacts too, it and the
-media player both change volume; if that bothers you, set the three buttons to "Nichts" (nothing) in
+media player both change volume; if that bothers you, set the three buttons to "Nothing" in
 your profile.
 
 ## The web interface
@@ -153,14 +153,14 @@ The BOOT button can do more, each on release:
 
 The last one is the emergency exit if a wrong IP address has locked you out.
 
-![Button mapping](docs/tasten.png)
+![Button mapping](docs/en/buttons.png)
 
-Under **Tasten** (buttons) you click a button on the drawn remote and choose what it sends. If you have
+Under **Buttons** you click a button on the drawn remote and choose what it sends. If you have
 the real remote in your hand, just press the button; the page jumps to it.
 
-![Settings](docs/einstellungen.png)
+![Settings](docs/en/settings.png)
 
-Under **Einstellungen** (settings) you find LED, connection, Wi-Fi, firmware update, backup, and three
+Under **Settings** you find LED, connection, Wi-Fi, firmware update, backup, and three
 levels of "undo everything": forget Wi-Fi, reset settings, factory reset.
 
 ### About passwords
@@ -204,7 +204,9 @@ browser installer.
 |---|---|
 | `firmware/siri_bridge/` | Firmware: BLE, USB HID, web interface, settings |
 | `firmware/siri_bridge/web/index.html` | The web interface, one single file |
+| `firmware/siri_bridge/web/lang/` | The texts of the web interface, one JSON file per language |
 | `tools/ui_dev.py` | Development server for the web interface |
+| `tools/ui_snap.py` | Takes pictures of the web interface with headless Chromium (the screenshots here) |
 | `tools/serial_log.py`, `tools/hid_watch.py` | Read the ESP's serial log and its USB key presses on Linux |
 | `tools/key_scan.py` | Shows what another USB input device sends, a Flirc for example |
 | `tools/esp_rescue.py` | Gets an ESP out of a boot loop |
@@ -234,7 +236,7 @@ Details are in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - [ ] **Long press** as a second mapping
 - [ ] **Sending infrared** as a mapping type, for TV volume for instance (needs an IR LED on the dongle)
 - [ ] **Receiving infrared:** translate ordinary IR remotes as well, the dongle as a better Flirc
-- [ ] **Switchable language** for the web interface
+- [ ] More **languages** for the web interface: copy `firmware/siri_bridge/web/lang/en.json`, translate, send it over
 - [ ] Properly test the mobile view of the web interface
 
 ## Thanks

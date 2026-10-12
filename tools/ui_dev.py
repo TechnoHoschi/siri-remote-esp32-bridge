@@ -19,6 +19,8 @@ import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import web_bundle
+
 INDEX = pathlib.Path(__file__).resolve().parent.parent / "firmware/siri_bridge/web/index.html"
 BUTTONS = ["Home/TV", "Vol+", "Vol-", "Click", "Power", "Siri", "Back", "Mute", "Play/Pause", "Up", "Right", "Down", "Left"]
 # Die mitgelieferten Profile, wie in firmware/siri_bridge/config.h (builtinProfile)
@@ -28,7 +30,7 @@ BUILTIN = [
     ("Universal", [(1, 0x65), VOL_UP, VOL_DOWN, OK, KEY_S, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
     ("Kodi (CoreELEC)", [(1, 0x06), VOL_UP, VOL_DOWN, ENTER, KEY_S, NONE, (1, 0x2A), MUTE, (1, 0x2C)] + ARROWS),
     ("Android / Fire TV", [(2, 0x223), VOL_UP, VOL_DOWN, OK, NONE, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
-    ("Eigenes Profil", [(1, 0x65), VOL_UP, VOL_DOWN, OK, KEY_S, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
+    ("Custom", [(1, 0x65), VOL_UP, VOL_DOWN, OK, KEY_S, SEARCH, (2, 0x224), MUTE, (2, 0xCD)] + ARROWS),
 ]
 
 
@@ -165,7 +167,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         url = urllib.parse.urlparse(self.path)
         if url.path == "/":
-            html = INDEX.read_text(encoding="utf-8")
+            html = web_bundle.bundle(INDEX)
             if self.esp:
                 mode, buttons = f"echte Daten von {self.esp}", ""
             else:
@@ -178,7 +180,7 @@ class Handler(BaseHTTPRequestHandler):
             # Leiste oben als eigener Block, damit sie nichts von der Seite verdeckt
             self.reply(200, html.replace("<body>", "<body>" + bar, 1), "text/html; charset=utf-8")
         elif url.path == "/dev/mtime":
-            self.reply(200, str(INDEX.stat().st_mtime_ns))
+            self.reply(200, str(max(f.stat().st_mtime_ns for f in web_bundle.sources(INDEX))))
         elif url.path == "/dev/scenario":
             name = urllib.parse.parse_qs(url.query).get("name", [""])[0]
             if name in SCENARIOS:

@@ -77,7 +77,7 @@ static Profile builtinProfile(uint8_t index) {
     {"Android / Fire TV",
      {A_AC_HOME, A_VOL_UP, A_VOL_DOWN, A_OK, A_NONE, A_SEARCH, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
     // Freier Platz zum Ausprobieren, anfangs eine Kopie von „Universal“.
-    {"Eigenes Profil",
+    {"Custom",
      {A_KEY_MENU, A_VOL_UP, A_VOL_DOWN, A_OK, A_KEY_S, A_SEARCH, A_AC_BACK, A_MUTE, A_PLAY_PAUSE, A_UP, A_RIGHT, A_DOWN, A_LEFT}},
   };
   return BUILTIN[index < PROFILE_COUNT ? index : 0];
@@ -123,7 +123,7 @@ static void sanitizeConfig(Config &c) {
   for (uint8_t i = 0; i < PROFILE_COUNT; i++) {
     Profile &p = c.profiles[i];
     p.name[PROFILE_NAME_SIZE - 1] = 0;
-    if (p.name[0] == 0) snprintf(p.name, PROFILE_NAME_SIZE, "Profil %u", i + 1);
+    if (p.name[0] == 0) snprintf(p.name, PROFILE_NAME_SIZE, "Profile %u", i + 1);
     for (Action &a : p.map) {
       if (a.type > ACTION_CONSUMER) a.type = ACTION_NONE;
       a.mods &= MOD_CTRL | MOD_SHIFT | MOD_ALT;
