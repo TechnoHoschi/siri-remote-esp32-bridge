@@ -64,8 +64,12 @@ Wer es mit etwas anderem ausprobiert: Rückmeldungen sind willkommen, in beide R
 ## Installieren
 
 **Der bequeme Weg:** ESP per USB an den Rechner, in Chrome oder Edge den
-[Browser-Installer](https://technohoschi.github.io/siri-remote-esp32-bridge/) öffnen, „Installieren“
-klicken.
+[Browser-Installer](https://technohoschi.github.io/siri-remote-esp32-bridge/) öffnen, den ESP in den
+Flash-Modus bringen (**BOOT halten, RESET tippen, BOOT loslassen**), „Installieren“ klicken und den
+Anschluss „USB JTAG/serial debug unit“ wählen. Nach gut einer Minute ist er fertig. Danach den ESP einmal ab-
+und anstecken, und er öffnet seinen Hotspot (siehe [Erste Schritte](#erste-schritte)).
+
+![Browser-Installer: Anleitung, Fortschritt, fertig](docs/installer.png)
 
 **Der händische Weg:** mit [esptool-js](https://espressif.github.io/esptool-js/) in Chrome oder Edge.
 

@@ -155,10 +155,10 @@ der Werksreset löscht es.
 3. Langer Tastendruck als zweite Belegung.
 4. Weitere Sprachen für die Weboberfläche (Deutsch und Englisch sind seit 2026-10-12 da). Nur Sprachen
    ausliefern, die jemand gegenlesen kann.
-5. Ein-Klick-Installer (GitHub Pages) testen, sobald das Repo öffentlich ist. Der händische Erstflash mit
-   esptool-js und dem merged-Image ist am 2026-10-12 vom Projektinhaber bestanden (ebenso der Werksreset über
-   BOOT 10 s); die Stolperstellen stehen in der README: Adresse `0x0` statt der vorbelegten `0x1000`,
-   Flash-Modus nur per BOOT + RESET, 115200 statt 921600 Baud.
+5. ✅ Ein-Klick-Installer (GitHub Pages): am 2026-10-15 vom Projektinhaber mit v0.6.3 bestanden – Flash
+   durchgelaufen, Hotspot erreichbar, nach der WLAN-Einrichtung einwandfreie Funktion. Screenshots in
+   `docs/installer.png`. Ebenso bestanden (2026-10-12): händischer Erstflash mit esptool-js und Werksreset
+   über BOOT 10 s; die Stolperstellen stehen in der README (`0x0` statt `0x1000`, BOOT + RESET, 115200 Baud).
 6. Handy-Ansicht der Weboberfläche gezielt durchsehen.
 7. Infrarot senden als dritte Belegungsart neben Tastatur und Multimedia (z. B. TV-Lautstärke), braucht
    eine IR-Sendediode am Dongle mit Sicht zum Fernseher. Hintergrund: Die Remote sendet Lautstärke und Mute
